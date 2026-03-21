@@ -4,6 +4,7 @@ type ConfigProvider interface {
 	GetPort() int
 	GetEnv() string
 	GetDBDSN() string
+	GetJWTSecret() string
 }
 
 type Config struct {
@@ -11,6 +12,9 @@ type Config struct {
 	Env  string
 	DB   struct {
 		DSN string
+	}
+	Auth struct {
+		JWTSecret string
 	}
 }
 
@@ -33,4 +37,8 @@ func (c *Config) GetEnv() string {
 
 func (c *Config) GetDBDSN() string {
 	return c.DB.DSN
+}
+
+func (c *Config) GetJWTSecret() string {
+	return c.Auth.JWTSecret
 }

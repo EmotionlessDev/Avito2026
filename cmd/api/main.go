@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/config"
+	authHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/delivery/http"
+	authDummyLogin "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/usecases"
+
 	_ "github.com/lib/pq"
 )
 
@@ -21,6 +24,7 @@ func main() {
 	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.DB.DSN, "dsn", os.Getenv("BOOKING_POSTGRES_DSN"), "PostgreSQL DSN")
+	flag.StringVar(&cfg.Auth.JWTSecret, "jwt", os.Getenv("JWT_SECRET"), "JWT secret key")
 	flag.Parse()
 
 	// Init logger
@@ -38,9 +42,18 @@ func main() {
 			logger.Error("error closing db", slog.String("error", err.Error()))
 		}
 	}()
+	// JWT secret
+	jwtSecret := cfg.GetJWTSecret()
+
+	// Init usecases
+	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
+
+	// Init handlers
+	authHandler := authHttp.NewHandler(authUsecase)
 
 	// Init serveMux
 	mux := http.NewServeMux()
+	mux.HandleFunc("/dummyLogin", authHandler.DummyLogin)
 
 	// Create http server
 	srv := &http.Server{
