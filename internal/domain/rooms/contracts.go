@@ -15,4 +15,5 @@ type Room struct {
 
 type RoomStorage interface {
 	CreateRoom(ctx context.Context, tx *sql.Tx, name, description string, capacity int) (string, error)
+	GetRooms(ctx context.Context, tx *sql.Tx) ([]*Room, error)
 }

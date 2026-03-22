@@ -49,6 +49,38 @@ func (s *Storage) CreateRoom(ctx context.Context, tx *sql.Tx, name, description 
 	return id, nil
 }
 
+const getRoomsSQL = `
+	SELECT id, name, description, capacity, created_at
+	FROM rooms
+`
+
+func (s *Storage) GetRooms(ctx context.Context, tx *sql.Tx) ([]*rooms.Room, error) {
+	if tx == nil {
+		return nil, common.ErrNilTx
+	}
+
+	rows, err := tx.QueryContext(ctx, getRoomsSQL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query rooms: %w", err)
+	}
+	defer rows.Close()
+
+	var result []*rooms.Room
+	for rows.Next() {
+		var r pgRoom
+		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Capacity, &r.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan room: %w", err)
+		}
+		result = append(result, pgRoomToDomain(&r))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return result, nil
+}
+
 func pgRoomToDomain(r *pgRoom) *rooms.Room {
 	return &rooms.Room{
 		ID:          r.ID,

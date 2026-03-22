@@ -13,9 +13,9 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/config"
 	authHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/delivery/http"
 	authDummyLogin "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/usecases"
-	roomCreateHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http"
+	roomHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http"
 	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
-	roomCreate "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
+	roomUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 
 	_ "github.com/lib/pq"
@@ -54,19 +54,26 @@ func main() {
 
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
-	createRoomUsecase := roomCreate.NewCreateRoom(roomStorage, db)
+	createRoomUsecase := roomUsecase.NewCreateRoom(roomStorage, db)
+	getRoomsUsecase := roomUsecase.NewGetRooms(roomStorage, db)
 
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
-	createRoomHandler := roomCreateHttp.NewHandler(createRoomUsecase)
+	createRoomHandler := roomHttp.NewCreateHandler(createRoomUsecase)
+	getRoomsHandler := roomHttp.NewGetHandler(getRoomsUsecase)
 
 	// Init serveMux
 	mux := http.NewServeMux()
 	mux.HandleFunc("/dummyLogin", authHandler.DummyLogin)
+	// rooms
 	mux.Handle("/rooms/create", middleware.Chain(
 		http.HandlerFunc(createRoomHandler.CreateRoom),
 		middleware.JWTMiddleware(jwtSecret),
 		middleware.RoleBased("admin")),
+	)
+	mux.Handle("/rooms/list", middleware.Chain(
+		http.HandlerFunc(getRoomsHandler.GetRooms),
+		middleware.JWTMiddleware(jwtSecret)),
 	)
 
 	// Create http server

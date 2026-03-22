@@ -32,18 +32,18 @@ services:
     networks:
       - booking_net
 
-  # migrate:
-  #   image: migrate/migrate
-  #   networks:
-  #    - booking_net
-  #   volumes:
-  #    - ./migrations:/migrations
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   command: ["-path", "/migrations", "-database",  "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable", "up"]
-  #   links: 
-  #    - db
+  migrate:
+    image: migrate/migrate
+    networks:
+     - booking_net
+    volumes:
+     - ./migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["-path", "/migrations", "-database",  "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable", "up"]
+    links: 
+     - db
 
 
 networks:

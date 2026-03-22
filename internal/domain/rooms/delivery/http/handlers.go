@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 )
 
@@ -13,13 +14,27 @@ type CreateRoomUsecase interface {
 	Execute(ctx context.Context, name, description string, capacity int) (string, error)
 }
 
-type Handler struct {
+type GetRoomsUsecase interface {
+	Execute(ctx context.Context) ([]*rooms.Room, error)
+}
+
+type CreateHandler struct {
 	createUsecase CreateRoomUsecase
 }
 
-func NewHandler(createUsecase CreateRoomUsecase) *Handler {
-	return &Handler{
+type GetHandler struct {
+	getUsecase GetRoomsUsecase
+}
+
+func NewCreateHandler(createUsecase CreateRoomUsecase) *CreateHandler {
+	return &CreateHandler{
 		createUsecase: createUsecase,
+	}
+}
+
+func NewGetHandler(getUsecase GetRoomsUsecase) *GetHandler {
+	return &GetHandler{
+		getUsecase: getUsecase,
 	}
 }
 
@@ -30,13 +45,10 @@ type CreateRoomRequest struct {
 }
 
 type CreateRoomResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Capacity    int    `json:"capacity"`
+	ID string `json:"id"`
 }
 
-func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
+func (h *CreateHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		common.MethodNotAllowedResponse(w)
 		return
@@ -82,12 +94,35 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rsp := &CreateRoomResponse{
-		ID:          id,
-		Name:        req.Name,
-		Description: req.Description,
-		Capacity:    req.Capacity,
+		ID: id,
 	}
 
 	helpers.WriteJSONObj(w, http.StatusCreated, rsp, nil)
 
+}
+
+type GetRoomsResponse struct {
+	Rooms []*rooms.Room `json:"rooms"`
+}
+
+func (h *GetHandler) GetRooms(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		common.MethodNotAllowedResponse(w)
+		return
+	}
+
+	roomList, err := h.getUsecase.Execute(r.Context())
+	if err != nil {
+		helpers.WriteJSON(w, http.StatusInternalServerError, helpers.Envelope{
+			"error":   "internal_error",
+			"message": err.Error(),
+		}, nil)
+		return
+	}
+
+	rsp := &GetRoomsResponse{
+		Rooms: roomList,
+	}
+
+	helpers.WriteJSONObj(w, http.StatusOK, rsp, nil)
 }
