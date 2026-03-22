@@ -16,7 +16,6 @@ import (
 	roomCreateHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http"
 	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
 	roomCreate "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
-	userHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/users/delivery/http"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 
 	_ "github.com/lib/pq"
@@ -60,16 +59,15 @@ func main() {
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
 	createRoomHandler := roomCreateHttp.NewHandler(createRoomUsecase)
-	helloHandler := userHttp.NewHandler()
-
-	// Init middlewares
-	authMW := middleware.JWTMiddleware(jwtSecret)
 
 	// Init serveMux
 	mux := http.NewServeMux()
 	mux.HandleFunc("/dummyLogin", authHandler.DummyLogin)
-	mux.Handle("/rooms", middleware.Chain(http.HandlerFunc(createRoomHandler.CreateRoom), authMW))
-	mux.Handle("/hello", middleware.Chain(http.HandlerFunc(helloHandler.HelloUser), authMW))
+	mux.Handle("/rooms/create", middleware.Chain(
+		http.HandlerFunc(createRoomHandler.CreateRoom),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("admin")),
+	)
 
 	// Create http server
 	srv := &http.Server{
