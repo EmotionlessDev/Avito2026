@@ -63,3 +63,23 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
 
 	return nil
 }
+
+func WriteJSONObj(w http.ResponseWriter, status int, data interface{}, headers http.Header) error {
+	js, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	for key, value := range headers {
+		w.Header()[key] = value
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, err = w.Write(js)
+	if err != nil {
+		return fmt.Errorf("failed to write response: %v", err)
+	}
+
+	return nil
+}

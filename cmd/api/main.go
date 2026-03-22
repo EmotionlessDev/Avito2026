@@ -13,6 +13,9 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/config"
 	authHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/delivery/http"
 	authDummyLogin "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/usecases"
+	roomCreateHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http"
+	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
+	roomCreate "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
 	userHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/users/delivery/http"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 
@@ -47,11 +50,16 @@ func main() {
 	// JWT secret
 	jwtSecret := cfg.GetJWTSecret()
 
+	// Init storages
+	roomStorage := roomStorage.NewStorage()
+
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
+	createRoomUsecase := roomCreate.NewCreateRoom(roomStorage, db)
 
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
+	createRoomHandler := roomCreateHttp.NewHandler(createRoomUsecase)
 	helloHandler := userHttp.NewHandler()
 
 	// Init middlewares
@@ -60,6 +68,7 @@ func main() {
 	// Init serveMux
 	mux := http.NewServeMux()
 	mux.HandleFunc("/dummyLogin", authHandler.DummyLogin)
+	mux.Handle("/rooms", middleware.Chain(http.HandlerFunc(createRoomHandler.CreateRoom), authMW))
 	mux.Handle("/hello", middleware.Chain(http.HandlerFunc(helloHandler.HelloUser), authMW))
 
 	// Create http server
