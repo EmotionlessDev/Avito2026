@@ -30,12 +30,11 @@ func (uc *CreateRoom) Execute(ctx context.Context, name, description string, cap
 	if err != nil {
 		return "", common.ErrBeginTx
 	}
+	commited := false
 	defer func() {
-		if err != nil {
+		if !commited {
 			_ = tx.Rollback()
-			return
 		}
-		_ = tx.Commit()
 	}()
 
 	id, err := uc.roomStorage.CreateRoom(ctx, tx, name, description, capacity)
@@ -46,5 +45,10 @@ func (uc *CreateRoom) Execute(ctx context.Context, name, description string, cap
 		return "", fmt.Errorf("failed to create room: %w", err)
 	}
 
+	if err := tx.Commit(); err != nil {
+		return "", common.ErrCommitTx
+	}
+
+	commited = true
 	return id, nil
 }

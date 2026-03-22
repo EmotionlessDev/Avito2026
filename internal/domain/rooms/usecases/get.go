@@ -29,12 +29,11 @@ func (uc *GetRooms) Execute(ctx context.Context) ([]*rooms.Room, error) {
 	if err != nil {
 		return nil, common.ErrBeginTx
 	}
+	commited := false
 	defer func() {
-		if err != nil {
+		if !commited {
 			_ = tx.Rollback()
-			return
 		}
-		_ = tx.Commit()
 	}()
 
 	roomList, err := uc.roomStorage.GetRooms(ctx, tx)
@@ -42,5 +41,10 @@ func (uc *GetRooms) Execute(ctx context.Context) ([]*rooms.Room, error) {
 		return nil, fmt.Errorf("failed to get rooms: %w", err)
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, common.ErrCommitTx
+	}
+
+	commited = true
 	return roomList, nil
 }
