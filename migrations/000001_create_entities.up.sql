@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS schedules (
     end_time TIME NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
+    UNIQUE (room_id),
     CHECK (start_time < end_time)
 );
 

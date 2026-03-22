@@ -8,10 +8,16 @@ import (
 )
 
 var (
-	ErrInvalidRole   error = errors.New("invalid role")
-	ErrNilTx         error = errors.New("nil transaction")
-	ErrDuplicateRoom error = errors.New("room with the same name already exists")
-	ErrBeginTx       error = errors.New("failed to begin transaction")
+	ErrInvalidRole          error = errors.New("invalid role")
+	ErrNilTx                error = errors.New("nil transaction")
+	ErrDuplicateRoom        error = errors.New("room with the same name already exists")
+	ErrBeginTx              error = errors.New("failed to begin transaction")
+	ErrDuplicateScheduleDay error = errors.New("schedule already has this day of week")
+	ErrInvalidScheduleDay   error = errors.New("invalid day of week, must be between 1 and 7")
+	ErrInvalidScheduleTime  error = errors.New("invalid schedule time, start time must be before end time")
+	ErrScheduleNotFound     error = errors.New("schedule not found")
+	ErrScheduleExists       error = errors.New("schedule already exists for the room with the same time and days of week")
+	ErrCommitTx             error = errors.New("failed to commit transaction")
 )
 
 func errorResponse(w http.ResponseWriter, status int, err error, message interface{}) {
