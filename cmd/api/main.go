@@ -13,6 +13,8 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/config"
 	authHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/delivery/http"
 	authDummyLogin "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/usecases"
+	userHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/users/delivery/http"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 
 	_ "github.com/lib/pq"
 )
@@ -50,10 +52,15 @@ func main() {
 
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
+	helloHandler := userHttp.NewHandler()
+
+	// Init middlewares
+	authMW := middleware.JWTMiddleware(jwtSecret)
 
 	// Init serveMux
 	mux := http.NewServeMux()
 	mux.HandleFunc("/dummyLogin", authHandler.DummyLogin)
+	mux.Handle("/hello", middleware.Chain(http.HandlerFunc(helloHandler.HelloUser), authMW))
 
 	// Create http server
 	srv := &http.Server{

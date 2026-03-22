@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type DummyLogin struct {
