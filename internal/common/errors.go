@@ -25,6 +25,7 @@ var (
 	ErrSlotNotFound         error = errors.New("slot not found")
 	ErrUnauthorized         error = errors.New("unauthorized")
 	ErrInvalidUUID          error = errors.New("invalid UUID format")
+	ErrForbidden            error = errors.New("forbidden")
 )
 
 func errorResponse(w http.ResponseWriter, status int, err error, message interface{}) {

@@ -16,4 +16,5 @@ type Booking struct {
 
 type BookingStorage interface {
 	CreateBooking(ctx context.Context, tx *sql.Tx, slotID, userID string, conferenceLink *string) (*Booking, error)
+	GetBookingsPaginated(ctx context.Context, tx *sql.Tx, limit, offset int) ([]*Booking, int, error)
 }

@@ -75,6 +75,7 @@ func main() {
 	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage, db)
 
 	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage, db)
+	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage, db)
 
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
@@ -86,7 +87,8 @@ func main() {
 
 	getSlotsHandler := slotHttp.NewSlotHandler(getSlotsUsecase)
 
-	createBookingHandler := bookingHttp.NewBookingHandler(createBookingUsecase)
+	createBookingHandler := bookingHttp.NewCreateHandler(createBookingUsecase)
+	getAllBookingsHandler := bookingHttp.NewGetAllHandler(getAllBookingsUsecase)
 
 	// Init serveMux
 	mux := http.NewServeMux()
@@ -119,6 +121,12 @@ func main() {
 		http.HandlerFunc(createBookingHandler.CreateBooking),
 		middleware.JWTMiddleware(jwtSecret),
 		middleware.RoleBased("user")),
+	)
+
+	mux.Handle("/bookings/list", middleware.Chain(
+		http.HandlerFunc(getAllBookingsHandler.GetAllBookings),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("admin")),
 	)
 
 	// Create http server
