@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
 )
 
@@ -40,10 +41,12 @@ func (s *Storage) CreateSlot(
 	if tx == nil {
 		return nil, common.ErrNilTx
 	}
+	start = start.UTC()
+	end = end.UTC()
 
 	var ps pgSlot
 
-	err := tx.QueryRowContext(ctx, createSlotSQL, roomID, start.UTC(), end.UTC()).
+	err := tx.QueryRowContext(ctx, createSlotSQL, roomID, start, end).
 		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
 
 	if err != nil {
@@ -75,6 +78,8 @@ func (s *Storage) GetSlotsByDate(
 	if tx == nil {
 		return nil, common.ErrNilTx
 	}
+	dayStart = dayStart.UTC()
+	dayEnd = dayEnd.UTC()
 
 	rows, err := tx.QueryContext(ctx, getSlotsByDateSQL, roomID, dayStart, dayEnd)
 	if err != nil {
@@ -109,6 +114,7 @@ LEFT JOIN bookings b
 WHERE s.room_id = $1
 AND s.start_time >= $2
 AND s.start_time < $3
+AND s.start_time >= NOW()
 AND b.id IS NULL
 ORDER BY s.start_time
 `
@@ -123,6 +129,8 @@ func (s *Storage) GetFreeSlots(
 	if tx == nil {
 		return nil, common.ErrNilTx
 	}
+	dayStart = dayStart.UTC()
+	dayEnd = dayEnd.UTC()
 
 	rows, err := tx.QueryContext(ctx, getFreeSlotsSQL, roomID, dayStart, dayEnd)
 	if err != nil {
@@ -163,6 +171,8 @@ func (s *Storage) getSlotByTime(
 ) (*slots.Slot, error) {
 
 	var ps pgSlot
+	start = start.UTC()
+	end = end.UTC()
 
 	err := tx.QueryRowContext(ctx, getSlotByTimeSQL, roomID, start, end).
 		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
@@ -171,6 +181,90 @@ func (s *Storage) getSlotByTime(
 	}
 
 	return pgSlotToDomain(&ps), nil
+}
+
+const getSlotByIDSQL = `
+SELECT id, room_id, start_time, end_time
+FROM slots
+WHERE id = $1
+`
+
+func (s *Storage) GetSlotByID(
+	ctx context.Context,
+	tx *sql.Tx,
+	slotID string,
+) (*slots.Slot, error) {
+
+	var ps pgSlot
+
+	err := tx.QueryRowContext(ctx, getSlotByIDSQL, slotID).
+		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
+	if err != nil {
+		return nil, fmt.Errorf("get slot by id: %w", err)
+	}
+
+	return pgSlotToDomain(&ps), nil
+}
+
+func (s *Storage) CreateSlotsForSchedule(ctx context.Context, tx *sql.Tx, roomID string, sched *schedules.Schedule, date time.Time) ([]*slots.Slot, error) {
+	var result []*slots.Slot
+	date = date.UTC().Truncate(24 * time.Hour)
+
+	weekday := int(date.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	if !contains(sched.DaysOfWeek, weekday) {
+		return []*slots.Slot{}, nil
+	}
+
+	startTime, err := combineDateAndTime(date, sched.StartTime)
+	if err != nil {
+		return nil, fmt.Errorf("invalid start time: %w", err)
+	}
+	endTime, err := combineDateAndTime(date, sched.EndTime)
+	if err != nil {
+		return nil, fmt.Errorf("invalid end time: %w", err)
+	}
+
+	for t := startTime; t.Before(endTime); t = t.Add(30 * time.Minute) {
+		slot, err := s.CreateSlot(ctx, tx, roomID, t, t.Add(30*time.Minute))
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, slot)
+	}
+
+	return result, nil
+}
+
+func combineDateAndTime(date time.Time, timeStr string) (time.Time, error) {
+	t, err := time.Parse("15:04", timeStr)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid time format: %w", err)
+	}
+	// set date to UTC to avoid timezone issues
+	date = date.UTC()
+
+	return time.Date(
+		date.Year(),
+		date.Month(),
+		date.Day(),
+		t.Hour(),
+		t.Minute(),
+		0,
+		0,
+		time.UTC,
+	), nil
+}
+
+func contains(slice []int, item int) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
 
 func pgSlotToDomain(s *pgSlot) *slots.Slot {

@@ -20,6 +20,11 @@ var (
 	ErrCommitTx             error = errors.New("failed to commit transaction")
 	ErrInvalidDate          error = errors.New("invalid date format, must be YYYY-MM-DD")
 	ErrRoomNotFound         error = errors.New("room not found")
+	ErrInvalidRequest       error = errors.New("invalid request")
+	ErrSlotAlreadyBooked    error = errors.New("slot is already booked")
+	ErrSlotNotFound         error = errors.New("slot not found")
+	ErrUnauthorized         error = errors.New("unauthorized")
+	ErrInvalidUUID          error = errors.New("invalid UUID format")
 )
 
 func errorResponse(w http.ResponseWriter, status int, err error, message interface{}) {

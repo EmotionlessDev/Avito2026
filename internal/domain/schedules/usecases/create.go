@@ -8,10 +8,12 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
 )
 
 type CreateSchedule struct {
 	scheduleStorage schedules.ScheduleStorage
+	slotStorage     slots.SlotStorage
 
 	db *sql.DB
 }

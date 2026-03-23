@@ -13,6 +13,9 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/config"
 	authHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/delivery/http"
 	authDummyLogin "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/usecases"
+	bookingHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/delivery/http"
+	bookingStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/storage"
+	bookingUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	roomHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http"
 	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
 	roomUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
@@ -59,6 +62,7 @@ func main() {
 	roomStorage := roomStorage.NewStorage()
 	scheduleStorage := scheduleStorage.NewStorage()
 	slotStorage := slotStorage.NewStorage()
+	bookingStorage := bookingStorage.NewStorage()
 
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
@@ -70,6 +74,8 @@ func main() {
 
 	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage, db)
 
+	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage, db)
+
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
 
@@ -79,6 +85,8 @@ func main() {
 	createScheduleHandler := scheduleHttp.NewScheduleHandler(createScheduleUsecase)
 
 	getSlotsHandler := slotHttp.NewSlotHandler(getSlotsUsecase)
+
+	createBookingHandler := bookingHttp.NewBookingHandler(createBookingUsecase)
 
 	// Init serveMux
 	mux := http.NewServeMux()
@@ -104,6 +112,13 @@ func main() {
 	mux.Handle("/rooms/{roomId}/slots/list", middleware.Chain(
 		http.HandlerFunc(getSlotsHandler.GetSlots),
 		middleware.JWTMiddleware(jwtSecret)),
+	)
+
+	// bookings
+	mux.Handle("/bookings/create", middleware.Chain(
+		http.HandlerFunc(createBookingHandler.CreateBooking),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("user")),
 	)
 
 	// Create http server

@@ -5,9 +5,9 @@ import "net/http"
 func RoleBased(allowedRoles ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims := UserFromContext(r.Context())
-			if claims == nil {
-				http.Error(w, "unauthorized: missing user", http.StatusUnauthorized)
+			claims, err := UserFromContext(r.Context())
+			if err != nil {
+				http.Error(w, "unauthorized: user not found in context", http.StatusUnauthorized)
 				return
 			}
 

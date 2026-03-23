@@ -65,6 +65,14 @@ func (h *SlotHandler) GetSlots(w http.ResponseWriter, r *http.Request) {
 			helpers.WriteJSON(w, http.StatusBadRequest, helpers.Envelope{
 				"error": "invalid_date",
 			}, nil)
+		case errors.Is(err, common.ErrRoomNotFound):
+			helpers.WriteJSON(w, http.StatusNotFound, helpers.Envelope{
+				"error": "room_not_found",
+			}, nil)
+		case errors.Is(err, common.ErrInvalidUUID):
+			helpers.WriteJSON(w, http.StatusBadRequest, helpers.Envelope{
+				"error": "invalid_room_id",
+			}, nil)
 		default:
 			helpers.WriteJSON(w, http.StatusInternalServerError, helpers.Envelope{
 				"error": "internal_error",
