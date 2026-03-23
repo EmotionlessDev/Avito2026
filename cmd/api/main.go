@@ -76,6 +76,7 @@ func main() {
 
 	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage, db)
 	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage, db)
+	getMyBookingsUsecase := bookingUsecase.NewGetMyBookings(bookingStorage, db)
 
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
@@ -89,6 +90,7 @@ func main() {
 
 	createBookingHandler := bookingHttp.NewCreateHandler(createBookingUsecase)
 	getAllBookingsHandler := bookingHttp.NewGetAllHandler(getAllBookingsUsecase)
+	getMyBookingsHandler := bookingHttp.NewGetMyHandler(getMyBookingsUsecase)
 
 	// Init serveMux
 	mux := http.NewServeMux()
@@ -127,6 +129,12 @@ func main() {
 		http.HandlerFunc(getAllBookingsHandler.GetAllBookings),
 		middleware.JWTMiddleware(jwtSecret),
 		middleware.RoleBased("admin")),
+	)
+
+	mux.Handle("/bookings/my", middleware.Chain(
+		http.HandlerFunc(getMyBookingsHandler.GetMyBookings),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("user")),
 	)
 
 	// Create http server

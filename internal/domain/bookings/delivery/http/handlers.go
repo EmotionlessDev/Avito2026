@@ -22,12 +22,20 @@ type GetAllBookingsUsecase interface {
 	Execute(ctx context.Context, input usecases.GetAllBookingsInput) (*usecases.GetAllBookingsOutput, error)
 }
 
+type GetMyBookingsUsecase interface {
+	Execute(ctx context.Context, input usecases.GetMyBookingsInput) (*usecases.GetMyBookingsOutput, error)
+}
+
 type CreateHandler struct {
 	createUsecase CreateBookingUsecase
 }
 
 type GetAllHandler struct {
 	getAllUsecase GetAllBookingsUsecase
+}
+
+type GetMyHandler struct {
+	getMyUsecase GetMyBookingsUsecase
 }
 
 func NewCreateHandler(uc CreateBookingUsecase) *CreateHandler {
@@ -39,6 +47,12 @@ func NewCreateHandler(uc CreateBookingUsecase) *CreateHandler {
 func NewGetAllHandler(uc GetAllBookingsUsecase) *GetAllHandler {
 	return &GetAllHandler{
 		getAllUsecase: uc,
+	}
+}
+
+func NewGetMyHandler(uc GetMyBookingsUsecase) *GetMyHandler {
+	return &GetMyHandler{
+		getMyUsecase: uc,
 	}
 }
 
@@ -195,6 +209,50 @@ func (h *GetAllHandler) GetAllBookings(w http.ResponseWriter, r *http.Request) {
 	resp := getAllBookingsResponse{
 		Bookings:   output.Bookings,
 		Pagination: output.Pagination,
+	}
+
+	helpers.WriteJSONObj(w, http.StatusOK, resp, nil)
+}
+
+type getMyBookingsResponse struct {
+	Bookings []*bookings.Booking `json:"bookings"`
+}
+
+func (h *GetMyHandler) GetMyBookings(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		common.MethodNotAllowedResponse(w)
+		return
+	}
+
+	user, err := middleware.UserFromContext(r.Context())
+	if err != nil {
+		helpers.WriteJSON(w, http.StatusUnauthorized, helpers.Envelope{
+			"error": "unauthorized",
+		}, nil)
+		return
+	}
+
+	if user.Role != "user" {
+		helpers.WriteJSON(w, http.StatusForbidden, helpers.Envelope{
+			"error": "forbidden",
+		}, nil)
+		return
+	}
+
+	input := usecases.GetMyBookingsInput{
+		UserID: user.UserID,
+	}
+
+	output, err := h.getMyUsecase.Execute(r.Context(), input)
+	if err != nil {
+		helpers.WriteJSON(w, http.StatusInternalServerError, helpers.Envelope{
+			"error": "internal_error",
+		}, nil)
+		return
+	}
+
+	resp := getMyBookingsResponse{
+		Bookings: output.Bookings,
 	}
 
 	helpers.WriteJSONObj(w, http.StatusOK, resp, nil)

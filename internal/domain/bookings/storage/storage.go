@@ -117,6 +117,64 @@ func (s *Storage) GetBookingsPaginated(
 	return result, total, nil
 }
 
+const getBookingsByUserIDSQL = `
+SELECT 
+    b.id, 
+    b.slot_id, 
+    b.user_id, 
+    b.status, 
+    b.conference_link, 
+    b.created_at
+FROM bookings b
+JOIN slots s ON b.slot_id = s.id
+WHERE 
+    b.user_id = $1 
+    AND s.start_time >= NOW()
+    AND b.status = 'active'
+ORDER BY s.start_time ASC
+`
+
+func (s *Storage) GetBookingsByUserID(
+	ctx context.Context,
+	tx *sql.Tx,
+	userID string,
+) ([]*bookings.Booking, error) {
+	if tx == nil {
+		return nil, common.ErrNilTx
+	}
+
+	rows, err := tx.QueryContext(ctx, getBookingsByUserIDSQL, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bookings by user id: %w", err)
+	}
+	defer rows.Close()
+
+	var result []*bookings.Booking
+	for rows.Next() {
+		var pb pgBooking
+
+		err := rows.Scan(
+			&pb.ID,
+			&pb.SlotID,
+			&pb.UserID,
+			&pb.Status,
+			&pb.ConferenceLink,
+			&pb.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan booking: %w", err)
+		}
+
+		result = append(result, pgBookingToDomain(&pb))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return result, nil
+}
+
 func pgBookingToDomain(pb *pgBooking) *bookings.Booking {
 	var link string
 	if pb.ConferenceLink.Valid {
