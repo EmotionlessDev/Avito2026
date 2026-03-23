@@ -18,6 +18,8 @@ var (
 	ErrScheduleNotFound     error = errors.New("schedule not found")
 	ErrScheduleExists       error = errors.New("schedule already exists for the room with the same time and days of week")
 	ErrCommitTx             error = errors.New("failed to commit transaction")
+	ErrInvalidDate          error = errors.New("invalid date format, must be YYYY-MM-DD")
+	ErrRoomNotFound         error = errors.New("room not found")
 )
 
 func errorResponse(w http.ResponseWriter, status int, err error, message interface{}) {

@@ -25,4 +25,5 @@ type ScheduleStorage interface {
 	) (*Schedule, error)
 	GetScheduleByID(ctx context.Context, tx *sql.Tx, scheduleID string) (*Schedule, error)
 	IsScheduleExistsByRoomID(ctx context.Context, tx *sql.Tx, roomID string) (bool, error)
+	GetScheduleByRoomID(ctx context.Context, tx *sql.Tx, roomID string) (*Schedule, error)
 }

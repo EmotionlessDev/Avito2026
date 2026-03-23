@@ -161,6 +161,38 @@ func (s *Storage) IsScheduleExistsByRoomID(ctx context.Context, tx *sql.Tx, room
 	return true, nil
 }
 
+const getScheduleByRoomIDSQL = `
+SELECT id, room_id, start_time, end_time, created_at
+FROM schedules
+WHERE room_id = $1
+`
+
+func (s *Storage) GetScheduleByRoomID(ctx context.Context, tx *sql.Tx, roomID string) (*schedules.Schedule, error) {
+	if tx == nil {
+		return nil, common.ErrNilTx
+	}
+
+	var sched pgSchedule
+	err := tx.QueryRowContext(ctx, getScheduleByRoomIDSQL, roomID).
+		Scan(&sched.ID, &sched.RoomID, &sched.StartTime, &sched.EndTime, &sched.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, common.ErrScheduleNotFound
+		}
+		return nil, fmt.Errorf("failed to get schedule: %w", err)
+	}
+
+	result := pgScheduleToDomain(&sched)
+
+	days, err := s.getScheduleDays(ctx, tx, sched.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get schedule days: %w", err)
+	}
+	result.DaysOfWeek = days
+
+	return result, nil
+}
+
 func pgScheduleToDomain(s *pgSchedule) *schedules.Schedule {
 	return &schedules.Schedule{
 		ID:        s.ID,

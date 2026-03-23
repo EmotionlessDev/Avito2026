@@ -19,6 +19,9 @@ import (
 	scheduleHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/delivery/http"
 	scheduleStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/storage"
 	scheduleUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/usecases"
+	slotHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/delivery/http"
+	slotStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/storage"
+	slotUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 
 	_ "github.com/lib/pq"
@@ -55,6 +58,7 @@ func main() {
 	// Init storages
 	roomStorage := roomStorage.NewStorage()
 	scheduleStorage := scheduleStorage.NewStorage()
+	slotStorage := slotStorage.NewStorage()
 
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
@@ -64,6 +68,8 @@ func main() {
 
 	createScheduleUsecase := scheduleUsecase.NewCreateSchedule(scheduleStorage, db)
 
+	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage, db)
+
 	// Init handlers
 	authHandler := authHttp.NewHandler(authUsecase)
 
@@ -71,6 +77,8 @@ func main() {
 	getRoomsHandler := roomHttp.NewGetHandler(getRoomsUsecase)
 
 	createScheduleHandler := scheduleHttp.NewScheduleHandler(createScheduleUsecase)
+
+	getSlotsHandler := slotHttp.NewSlotHandler(getSlotsUsecase)
 
 	// Init serveMux
 	mux := http.NewServeMux()
@@ -90,6 +98,12 @@ func main() {
 		http.HandlerFunc(createScheduleHandler.CreateSchedule),
 		middleware.JWTMiddleware(jwtSecret),
 		middleware.RoleBased("admin")),
+	)
+
+	// slots
+	mux.Handle("/rooms/{roomId}/slots/list", middleware.Chain(
+		http.HandlerFunc(getSlotsHandler.GetSlots),
+		middleware.JWTMiddleware(jwtSecret)),
 	)
 
 	// Create http server
