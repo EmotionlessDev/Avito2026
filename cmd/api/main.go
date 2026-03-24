@@ -61,8 +61,8 @@ func main() {
 
 	// Init storages
 	roomStorage := roomStorage.NewStorage(db)
-	scheduleStorage := scheduleStorage.NewStorage()
-	slotStorage := slotStorage.NewStorage()
+	scheduleStorage := scheduleStorage.NewStorage(db)
+	slotStorage := slotStorage.NewStorage(db)
 	bookingStorage := bookingStorage.NewStorage()
 
 	// Init usecases
@@ -71,9 +71,9 @@ func main() {
 	createRoomUsecase := roomUsecase.NewCreateRoom(roomStorage)
 	getRoomsUsecase := roomUsecase.NewGetRooms(roomStorage)
 
-	createScheduleUsecase := scheduleUsecase.NewCreateSchedule(scheduleStorage, db)
+	createScheduleUsecase := scheduleUsecase.NewCreateSchedule(scheduleStorage)
 
-	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage, db)
+	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage)
 
 	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage, db)
 	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage, db)

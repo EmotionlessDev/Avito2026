@@ -47,7 +47,7 @@ func (uc *CreateBooking) Execute(ctx context.Context, input CreateBookingInput) 
 	}()
 
 	// get slot
-	slot, err := uc.slotStorage.GetSlotByID(ctx, tx, input.SlotID)
+	slot, err := uc.slotStorage.GetSlotByID(ctx, input.SlotID)
 	if err != nil {
 		return nil, err
 	}

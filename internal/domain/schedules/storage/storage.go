@@ -18,10 +18,14 @@ type pgSchedule struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
-type Storage struct{}
+type Storage struct {
+	db *sql.DB
+}
 
-func NewStorage() *Storage {
-	return &Storage{}
+func NewStorage(db *sql.DB) *Storage {
+	return &Storage{
+		db: db,
+	}
 }
 
 const createScheduleSQL = `
@@ -37,16 +41,70 @@ VALUES ($1, $2)
 
 func (s *Storage) CreateSchedule(
 	ctx context.Context,
+	roomID string,
+	startTime, endTime time.Time,
+	days []int,
+) (*schedules.Schedule, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if !startTime.Before(endTime) {
+		return nil, common.ErrInvalidScheduleTime
+	}
+
+	var sched pgSchedule
+	err = tx.QueryRowContext(ctx, createScheduleSQL, roomID, startTime, endTime).
+		Scan(&sched.ID, &sched.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create schedule: %w", err)
+	}
+
+	sched.RoomID = roomID
+	sched.StartTime = startTime
+	sched.EndTime = endTime
+
+	seenDays := make(map[int]bool)
+	for _, d := range days {
+		if d < 1 || d > 7 {
+			return nil, common.ErrInvalidScheduleDay
+		}
+		if seenDays[d] {
+			return nil, common.ErrDuplicateScheduleDay
+		}
+		seenDays[d] = true
+
+		if _, err := tx.ExecContext(ctx, insertDaySQL, sched.ID, d); err != nil {
+			return nil, fmt.Errorf("failed to insert day: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	result := pgScheduleToDomain(&sched)
+	result.DaysOfWeek = days
+
+	return result, nil
+}
+
+func (s *Storage) createScheduleWithTx(
+	ctx context.Context,
 	tx *sql.Tx,
 	roomID string,
 	startTime, endTime time.Time,
 	days []int,
 ) (*schedules.Schedule, error) {
-
-	if tx == nil {
-		return nil, common.ErrNilTx
-	}
-
 	if !startTime.Before(endTime) {
 		return nil, common.ErrInvalidScheduleTime
 	}
@@ -89,11 +147,46 @@ FROM schedules
 WHERE id = $1
 `
 
-func (s *Storage) GetScheduleByID(ctx context.Context, tx *sql.Tx, scheduleID string) (*schedules.Schedule, error) {
-	if tx == nil {
-		return nil, common.ErrNilTx
+func (s *Storage) GetScheduleByID(ctx context.Context, scheduleID string) (*schedules.Schedule, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var sched pgSchedule
+	err = tx.QueryRowContext(ctx, getScheduleByIDSQL, scheduleID).
+		Scan(&sched.ID, &sched.RoomID, &sched.StartTime, &sched.EndTime, &sched.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, common.ErrScheduleNotFound
+		}
+		return nil, fmt.Errorf("failed to get schedule: %w", err)
 	}
 
+	result := pgScheduleToDomain(&sched)
+
+	days, err := s.getScheduleDaysWithTx(ctx, tx, sched.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get schedule days: %w", err)
+	}
+	result.DaysOfWeek = days
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return result, nil
+}
+
+func (s *Storage) getScheduleByIDWithTx(ctx context.Context, tx *sql.Tx, scheduleID string) (*schedules.Schedule, error) {
 	var sched pgSchedule
 	err := tx.QueryRowContext(ctx, getScheduleByIDSQL, scheduleID).
 		Scan(&sched.ID, &sched.RoomID, &sched.StartTime, &sched.EndTime, &sched.CreatedAt)
@@ -106,7 +199,7 @@ func (s *Storage) GetScheduleByID(ctx context.Context, tx *sql.Tx, scheduleID st
 
 	result := pgScheduleToDomain(&sched)
 
-	days, err := s.getScheduleDays(ctx, tx, sched.ID)
+	days, err := s.getScheduleDaysWithTx(ctx, tx, sched.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get schedule days: %w", err)
 	}
@@ -121,7 +214,7 @@ FROM schedule_days
 WHERE schedule_id = $1
 `
 
-func (s *Storage) getScheduleDays(ctx context.Context, tx *sql.Tx, scheduleID string) ([]int, error) {
+func (s *Storage) getScheduleDaysWithTx(ctx context.Context, tx *sql.Tx, scheduleID string) ([]int, error) {
 	rows, err := tx.QueryContext(ctx, getScheduleDaysSQL, scheduleID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query schedule days: %w", err)
@@ -149,7 +242,41 @@ FROM schedules
 WHERE room_id = $1
 `
 
-func (s *Storage) IsScheduleExistsByRoomID(ctx context.Context, tx *sql.Tx, roomID string) (bool, error) {
+func (s *Storage) IsScheduleExistsByRoomID(ctx context.Context, roomID string) (bool, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return false, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var id string
+	err = tx.QueryRowContext(ctx, isScheduleExistsByRoomIDSQL, roomID).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			if err := tx.Commit(); err != nil {
+				return false, fmt.Errorf("failed to commit tx: %w", err)
+			}
+			commited = true
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check schedule: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return false, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return true, nil
+}
+
+func (s *Storage) isScheduleExistsByRoomIDWithTx(ctx context.Context, tx *sql.Tx, roomID string) (bool, error) {
 	var id string
 	err := tx.QueryRowContext(ctx, isScheduleExistsByRoomIDSQL, roomID).Scan(&id)
 	if err != nil {
@@ -167,11 +294,47 @@ FROM schedules
 WHERE room_id = $1
 `
 
-func (s *Storage) GetScheduleByRoomID(ctx context.Context, tx *sql.Tx, roomID string) (*schedules.Schedule, error) {
-	if tx == nil {
-		return nil, common.ErrNilTx
+func (s *Storage) GetScheduleByRoomID(ctx context.Context, roomID string) (*schedules.Schedule, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var sched pgSchedule
+	err = tx.QueryRowContext(ctx, getScheduleByRoomIDSQL, roomID).
+		Scan(&sched.ID, &sched.RoomID, &sched.StartTime, &sched.EndTime, &sched.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, common.ErrScheduleNotFound
+		}
+		return nil, fmt.Errorf("failed to get schedule: %w", err)
 	}
 
+	result := pgScheduleToDomain(&sched)
+
+	// ← Вызываем приватный метод с той же транзакцией
+	days, err := s.getScheduleDaysWithTx(ctx, tx, sched.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get schedule days: %w", err)
+	}
+	result.DaysOfWeek = days
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return result, nil
+}
+
+func (s *Storage) getScheduleByRoomIDWithTx(ctx context.Context, tx *sql.Tx, roomID string) (*schedules.Schedule, error) {
 	var sched pgSchedule
 	err := tx.QueryRowContext(ctx, getScheduleByRoomIDSQL, roomID).
 		Scan(&sched.ID, &sched.RoomID, &sched.StartTime, &sched.EndTime, &sched.CreatedAt)
@@ -184,7 +347,7 @@ func (s *Storage) GetScheduleByRoomID(ctx context.Context, tx *sql.Tx, roomID st
 
 	result := pgScheduleToDomain(&sched)
 
-	days, err := s.getScheduleDays(ctx, tx, sched.ID)
+	days, err := s.getScheduleDaysWithTx(ctx, tx, sched.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get schedule days: %w", err)
 	}
@@ -202,3 +365,4 @@ func pgScheduleToDomain(s *pgSchedule) *schedules.Schedule {
 		CreatedAt: s.CreatedAt,
 	}
 }
+

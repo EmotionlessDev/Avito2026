@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
 )
@@ -18,10 +17,14 @@ type pgSlot struct {
 	EndTime   time.Time `db:"end_time"`
 }
 
-type Storage struct{}
+type Storage struct {
+	db *sql.DB
+}
 
-func NewStorage() *Storage {
-	return &Storage{}
+func NewStorage(db *sql.DB) *Storage {
+	return &Storage{
+		db: db,
+	}
 }
 
 const createSlotSQL = `
@@ -33,29 +36,40 @@ RETURNING id, room_id, start_time, end_time
 
 func (s *Storage) CreateSlot(
 	ctx context.Context,
-	tx *sql.Tx,
 	roomID string,
 	start, end time.Time,
 ) (*slots.Slot, error) {
-
-	if tx == nil {
-		return nil, common.ErrNilTx
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
 	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
 	start = start.UTC()
 	end = end.UTC()
 
 	var ps pgSlot
 
-	err := tx.QueryRowContext(ctx, createSlotSQL, roomID, start, end).
+	err = tx.QueryRowContext(ctx, createSlotSQL, roomID, start, end).
 		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return s.getSlotByTime(ctx, tx, roomID, start, end)
+			return s.getSlotByTimeWithTx(ctx, tx, roomID, start, end)
 		}
 		return nil, fmt.Errorf("create slot: %w", err)
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
 	return pgSlotToDomain(&ps), nil
 }
 
@@ -70,14 +84,21 @@ ORDER BY start_time
 
 func (s *Storage) GetSlotsByDate(
 	ctx context.Context,
-	tx *sql.Tx,
 	roomID string,
 	dayStart, dayEnd time.Time,
 ) ([]*slots.Slot, error) {
-
-	if tx == nil {
-		return nil, common.ErrNilTx
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
 	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
 	dayStart = dayStart.UTC()
 	dayEnd = dayEnd.UTC()
 
@@ -103,6 +124,11 @@ func (s *Storage) GetSlotsByDate(
 		return nil, err
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
 	return result, nil
 }
 
@@ -121,14 +147,21 @@ ORDER BY s.start_time
 
 func (s *Storage) GetFreeSlots(
 	ctx context.Context,
-	tx *sql.Tx,
 	roomID string,
 	dayStart, dayEnd time.Time,
 ) ([]*slots.Slot, error) {
-
-	if tx == nil {
-		return nil, common.ErrNilTx
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
 	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
 	dayStart = dayStart.UTC()
 	dayEnd = dayEnd.UTC()
 
@@ -154,6 +187,11 @@ func (s *Storage) GetFreeSlots(
 		return nil, err
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
 	return result, nil
 }
 
@@ -165,20 +203,35 @@ WHERE room_id = $1 AND start_time = $2 AND end_time = $3
 
 func (s *Storage) getSlotByTime(
 	ctx context.Context,
-	tx *sql.Tx,
 	roomID string,
 	start, end time.Time,
 ) (*slots.Slot, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
 
 	var ps pgSlot
 	start = start.UTC()
 	end = end.UTC()
 
-	err := tx.QueryRowContext(ctx, getSlotByTimeSQL, roomID, start, end).
+	err = tx.QueryRowContext(ctx, getSlotByTimeSQL, roomID, start, end).
 		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
 	if err != nil {
 		return nil, fmt.Errorf("get slot by time: %w", err)
 	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
 
 	return pgSlotToDomain(&ps), nil
 }
@@ -191,22 +244,48 @@ WHERE id = $1
 
 func (s *Storage) GetSlotByID(
 	ctx context.Context,
-	tx *sql.Tx,
 	slotID string,
 ) (*slots.Slot, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
 
 	var ps pgSlot
 
-	err := tx.QueryRowContext(ctx, getSlotByIDSQL, slotID).
+	err = tx.QueryRowContext(ctx, getSlotByIDSQL, slotID).
 		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
 	if err != nil {
 		return nil, fmt.Errorf("get slot by id: %w", err)
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
 	return pgSlotToDomain(&ps), nil
 }
 
-func (s *Storage) CreateSlotsForSchedule(ctx context.Context, tx *sql.Tx, roomID string, sched *schedules.Schedule, date time.Time) ([]*slots.Slot, error) {
+func (s *Storage) CreateSlotsForSchedule(ctx context.Context, roomID string, sched *schedules.Schedule, date time.Time) ([]*slots.Slot, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
 	var result []*slots.Slot
 	date = date.UTC().Truncate(24 * time.Hour)
 
@@ -228,14 +307,59 @@ func (s *Storage) CreateSlotsForSchedule(ctx context.Context, tx *sql.Tx, roomID
 	}
 
 	for t := startTime; t.Before(endTime); t = t.Add(30 * time.Minute) {
-		slot, err := s.CreateSlot(ctx, tx, roomID, t, t.Add(30*time.Minute))
+		slot, err := s.createSlotWithTx(ctx, tx, roomID, t, t.Add(30*time.Minute))
 		if err != nil {
 			return nil, err
 		}
 		result = append(result, slot)
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
 	return result, nil
+}
+
+func (s *Storage) createSlotWithTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	roomID string,
+	start, end time.Time,
+) (*slots.Slot, error) {
+	start = start.UTC()
+	end = end.UTC()
+
+	var ps pgSlot
+	err := tx.QueryRowContext(ctx, createSlotSQL, roomID, start, end).
+		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return s.getSlotByTimeWithTx(ctx, tx, roomID, start, end)
+		}
+		return nil, fmt.Errorf("create slot: %w", err)
+	}
+	return pgSlotToDomain(&ps), nil
+}
+
+func (s *Storage) getSlotByTimeWithTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	roomID string,
+	start, end time.Time,
+) (*slots.Slot, error) {
+	var ps pgSlot
+	start = start.UTC()
+	end = end.UTC()
+
+	err := tx.QueryRowContext(ctx, getSlotByTimeSQL, roomID, start, end).
+		Scan(&ps.ID, &ps.RoomID, &ps.StartTime, &ps.EndTime)
+	if err != nil {
+		return nil, fmt.Errorf("get slot by time: %w", err)
+	}
+	return pgSlotToDomain(&ps), nil
 }
 
 func combineDateAndTime(date time.Time, timeStr string) (time.Time, error) {
