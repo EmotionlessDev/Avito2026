@@ -3,7 +3,7 @@ services:
     build: .
     container_name: booking_app
     ports:
-      - "8080:4000"
+      - "8080:8080"
     env_file:
       - .env.local
     depends_on:
@@ -17,33 +17,39 @@ services:
     container_name: booking_db
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: postgres 
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: booking
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 3s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d booking"]
+      interval: 5s
       timeout: 5s
-      retries: 5
-    volumes:
-      - pg_data:/var/lib/postgresql/data
+      retries: 20
+      start_period: 10s
+    # volumes:
+    #   - pg_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
       - booking_net
 
-  # migrate:
-  #   image: migrate/migrate
-  #   networks:
-  #    - booking_net
-  #   volumes:
-  #    - ./migrations:/migrations
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   command: ["-path", "/migrations", "-database",  "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable", "up"]
-  #   links: 
-  #    - db
+  migrate:
+    image: migrate/migrate
+    networks:
+     - booking_net
+    volumes:
+     - ./migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://postgres:postgres@db:5432/booking?sslmode=disable",
+      "up"
+    ]
+
+    links: 
+     - db
 
 
 networks:

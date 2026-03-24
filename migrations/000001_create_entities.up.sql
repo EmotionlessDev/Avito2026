@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+INSERT INTO users (id, email, role, password_hash, created_at) VALUES
+('11111111-1111-1111-1111-111111111111', 'admin@example.com', 'admin', 'dummyhash', NOW()),
+('22222222-2222-2222-2222-222222222222', 'user@example.com', 'user', 'dummyhash', NOW());
+
 CREATE TABLE IF NOT EXISTS rooms (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
@@ -24,6 +28,7 @@ CREATE TABLE IF NOT EXISTS schedules (
     end_time TIME NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
+    UNIQUE (room_id),
     CHECK (start_time < end_time)
 );
 

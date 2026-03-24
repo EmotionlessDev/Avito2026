@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -44,9 +45,10 @@ func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 	}
 }
 
-func UserFromContext(ctx context.Context) *Claims {
-	if u, ok := ctx.Value(userCtxKey).(*Claims); ok {
-		return u
+func UserFromContext(ctx context.Context) (*Claims, error) {
+	claims, ok := ctx.Value(userCtxKey).(*Claims)
+	if !ok {
+		return nil, common.ErrUnauthorized
 	}
-	return nil
+	return claims, nil
 }

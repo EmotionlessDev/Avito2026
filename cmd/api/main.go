@@ -13,7 +13,19 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/config"
 	authHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/delivery/http"
 	authDummyLogin "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/usecases"
-	userHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/users/delivery/http"
+	bookingHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/delivery/http"
+	bookingStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/storage"
+	bookingUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
+	infoHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/info/delivery/http"
+	roomHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http"
+	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
+	roomUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
+	scheduleHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/delivery/http"
+	scheduleStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/storage"
+	scheduleUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/usecases"
+	slotHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/delivery/http"
+	slotStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/storage"
+	slotUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 
 	_ "github.com/lib/pq"
@@ -23,7 +35,7 @@ func main() {
 	// Init config
 	cfg := config.New(0, "", "")
 
-	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
+	flag.IntVar(&cfg.Port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.DB.DSN, "dsn", os.Getenv("BOOKING_POSTGRES_DSN"), "PostgreSQL DSN")
 	flag.StringVar(&cfg.Auth.JWTSecret, "jwt", os.Getenv("JWT_SECRET"), "JWT secret key")
@@ -47,20 +59,98 @@ func main() {
 	// JWT secret
 	jwtSecret := cfg.GetJWTSecret()
 
+	// Init storages
+	roomStorage := roomStorage.NewStorage()
+	scheduleStorage := scheduleStorage.NewStorage()
+	slotStorage := slotStorage.NewStorage()
+	bookingStorage := bookingStorage.NewStorage()
+
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
 
-	// Init handlers
-	authHandler := authHttp.NewHandler(authUsecase)
-	helloHandler := userHttp.NewHandler()
+	createRoomUsecase := roomUsecase.NewCreateRoom(roomStorage, db)
+	getRoomsUsecase := roomUsecase.NewGetRooms(roomStorage, db)
 
-	// Init middlewares
-	authMW := middleware.JWTMiddleware(jwtSecret)
+	createScheduleUsecase := scheduleUsecase.NewCreateSchedule(scheduleStorage, db)
+
+	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage, db)
+
+	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage, db)
+	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage, db)
+	getMyBookingsUsecase := bookingUsecase.NewGetMyBookings(bookingStorage, db)
+	cancelBookingUsecase := bookingUsecase.NewCancelBooking(bookingStorage, db)
+
+	// Init handlers
+	infoHandler := infoHttp.NewInfoHandler()
+
+	authHandler := authHttp.NewHandler(authUsecase)
+
+	createRoomHandler := roomHttp.NewCreateHandler(createRoomUsecase)
+	getRoomsHandler := roomHttp.NewGetHandler(getRoomsUsecase)
+
+	createScheduleHandler := scheduleHttp.NewScheduleHandler(createScheduleUsecase)
+
+	getSlotsHandler := slotHttp.NewSlotHandler(getSlotsUsecase)
+
+	createBookingHandler := bookingHttp.NewCreateHandler(createBookingUsecase)
+	getAllBookingsHandler := bookingHttp.NewGetAllHandler(getAllBookingsUsecase)
+	getMyBookingsHandler := bookingHttp.NewGetMyHandler(getMyBookingsUsecase)
+	cancelBookingHandler := bookingHttp.NewCancelHandler(cancelBookingUsecase)
 
 	// Init serveMux
 	mux := http.NewServeMux()
 	mux.HandleFunc("/dummyLogin", authHandler.DummyLogin)
-	mux.Handle("/hello", middleware.Chain(http.HandlerFunc(helloHandler.HelloUser), authMW))
+	// info
+	mux.Handle("/_info", http.HandlerFunc(infoHandler.ServeHTTP))
+
+	// rooms
+	mux.Handle("/rooms/create", middleware.Chain(
+		http.HandlerFunc(createRoomHandler.CreateRoom),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("admin")),
+	)
+	mux.Handle("/rooms/list", middleware.Chain(
+		http.HandlerFunc(getRoomsHandler.GetRooms),
+		middleware.JWTMiddleware(jwtSecret)),
+	)
+
+	// schedules
+	mux.Handle("/rooms/{roomId}/schedule/create", middleware.Chain(
+		http.HandlerFunc(createScheduleHandler.CreateSchedule),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("admin")),
+	)
+
+	// slots
+	mux.Handle("/rooms/{roomId}/slots/list", middleware.Chain(
+		http.HandlerFunc(getSlotsHandler.GetSlots),
+		middleware.JWTMiddleware(jwtSecret)),
+	)
+
+	// bookings
+	mux.Handle("/bookings/create", middleware.Chain(
+		http.HandlerFunc(createBookingHandler.CreateBooking),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("user")),
+	)
+
+	mux.Handle("/bookings/list", middleware.Chain(
+		http.HandlerFunc(getAllBookingsHandler.GetAllBookings),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("admin")),
+	)
+
+	mux.Handle("/bookings/my", middleware.Chain(
+		http.HandlerFunc(getMyBookingsHandler.GetMyBookings),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("user")),
+	)
+
+	mux.Handle("/bookings/{bookingId}/cancel", middleware.Chain(
+		http.HandlerFunc(cancelBookingHandler.CancelBooking),
+		middleware.JWTMiddleware(jwtSecret),
+		middleware.RoleBased("user")),
+	)
 
 	// Create http server
 	srv := &http.Server{
