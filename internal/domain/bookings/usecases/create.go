@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -14,14 +13,12 @@ import (
 type CreateBooking struct {
 	bookingStorage bookings.BookingStorage
 	slotStorage    slots.SlotStorage
-	db             *sql.DB
 }
 
-func NewCreateBooking(bookingStorage bookings.BookingStorage, slotStorage slots.SlotStorage, db *sql.DB) *CreateBooking {
+func NewCreateBooking(bookingStorage bookings.BookingStorage, slotStorage slots.SlotStorage) *CreateBooking {
 	return &CreateBooking{
 		bookingStorage: bookingStorage,
 		slotStorage:    slotStorage,
-		db:             db,
 	}
 }
 
@@ -32,20 +29,6 @@ type CreateBookingInput struct {
 }
 
 func (uc *CreateBooking) Execute(ctx context.Context, input CreateBookingInput) (*bookings.Booking, error) {
-	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
-
-	tx, err := uc.db.BeginTx(ctx, opts)
-	if err != nil {
-		return nil, common.ErrBeginTx
-	}
-
-	committed := false
-	defer func() {
-		if !committed {
-			_ = tx.Rollback()
-		}
-	}()
-
 	// get slot
 	slot, err := uc.slotStorage.GetSlotByID(ctx, input.SlotID)
 	if err != nil {
@@ -70,16 +53,11 @@ func (uc *CreateBooking) Execute(ctx context.Context, input CreateBookingInput) 
 	}
 
 	// create booking
-	booking, err := uc.bookingStorage.CreateBooking(ctx, tx, input.SlotID, input.UserID, link)
+	booking, err := uc.bookingStorage.CreateBooking(ctx, input.SlotID, input.UserID, link)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, common.ErrCommitTx
-	}
-
-	committed = true
 	return booking, nil
 }
 

@@ -19,10 +19,14 @@ type pgBooking struct {
 	CreatedAt      string         `db:"created_at"`
 }
 
-type Storage struct{}
+type Storage struct {
+	db *sql.DB
+}
 
-func NewStorage() *Storage {
-	return &Storage{}
+func NewStorage(db *sql.DB) *Storage {
+	return &Storage{
+		db: db,
+	}
 }
 
 const createBookingSQL = `
@@ -33,16 +37,47 @@ RETURNING id, slot_id, user_id, status, conference_link, created_at
 
 func (s *Storage) CreateBooking(
 	ctx context.Context,
+	slotID, userID string,
+	conferenceLink *string,
+) (*bookings.Booking, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var pb pgBooking
+	err = tx.QueryRowContext(ctx, createBookingSQL, slotID, userID, conferenceLink).
+		Scan(&pb.ID, &pb.SlotID, &pb.UserID, &pb.Status, &pb.ConferenceLink, &pb.CreatedAt)
+
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, common.ErrSlotAlreadyBooked
+		}
+		return nil, fmt.Errorf("create booking: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return pgBookingToDomain(&pb), nil
+}
+
+func (s *Storage) createBookingWithTx(
+	ctx context.Context,
 	tx *sql.Tx,
 	slotID, userID string,
 	conferenceLink *string,
 ) (*bookings.Booking, error) {
-	if tx == nil {
-		return nil, common.ErrNilTx
-	}
-
 	var pb pgBooking
-
 	err := tx.QueryRowContext(ctx, createBookingSQL, slotID, userID, conferenceLink).
 		Scan(&pb.ID, &pb.SlotID, &pb.UserID, &pb.Status, &pb.ConferenceLink, &pb.CreatedAt)
 
@@ -69,14 +104,70 @@ SELECT COUNT(*) FROM bookings
 
 func (s *Storage) GetBookingsPaginated(
 	ctx context.Context,
+	limit, offset int,
+) ([]*bookings.Booking, int, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// total count
+	var total int
+	err = tx.QueryRowContext(ctx, countBookingsSQL).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count bookings: %w", err)
+	}
+
+	rows, err := tx.QueryContext(ctx, getBookingsSQL, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get bookings: %w", err)
+	}
+	defer rows.Close()
+
+	var result []*bookings.Booking
+
+	for rows.Next() {
+		var pb pgBooking
+
+		err := rows.Scan(
+			&pb.ID,
+			&pb.SlotID,
+			&pb.UserID,
+			&pb.Status,
+			&pb.ConferenceLink,
+			&pb.CreatedAt,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scan booking: %w", err)
+		}
+
+		result = append(result, pgBookingToDomain(&pb))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, 0, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return result, total, nil
+}
+
+func (s *Storage) getBookingsPaginatedWithTx(
+	ctx context.Context,
 	tx *sql.Tx,
 	limit, offset int,
 ) ([]*bookings.Booking, int, error) {
-
-	if tx == nil {
-		return nil, 0, common.ErrNilTx
-	}
-
 	// total count
 	var total int
 	err := tx.QueryRowContext(ctx, countBookingsSQL).Scan(&total)
@@ -136,13 +227,62 @@ ORDER BY s.start_time ASC
 
 func (s *Storage) GetBookingsByUserID(
 	ctx context.Context,
+	userID string,
+) ([]*bookings.Booking, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	rows, err := tx.QueryContext(ctx, getBookingsByUserIDSQL, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bookings by user id: %w", err)
+	}
+	defer rows.Close()
+
+	var result []*bookings.Booking
+	for rows.Next() {
+		var pb pgBooking
+
+		err := rows.Scan(
+			&pb.ID,
+			&pb.SlotID,
+			&pb.UserID,
+			&pb.Status,
+			&pb.ConferenceLink,
+			&pb.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan booking: %w", err)
+		}
+
+		result = append(result, pgBookingToDomain(&pb))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return result, nil
+}
+
+func (s *Storage) getBookingsByUserIDWithTx(
+	ctx context.Context,
 	tx *sql.Tx,
 	userID string,
 ) ([]*bookings.Booking, error) {
-	if tx == nil {
-		return nil, common.ErrNilTx
-	}
-
 	rows, err := tx.QueryContext(ctx, getBookingsByUserIDSQL, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bookings by user id: %w", err)
@@ -181,11 +321,40 @@ FROM bookings
 WHERE id = $1
 `
 
-func (s *Storage) GetBookingByID(ctx context.Context, tx *sql.Tx, bookingID string) (*bookings.Booking, error) {
-	if tx == nil {
-		return nil, common.ErrNilTx
+func (s *Storage) GetBookingByID(ctx context.Context, bookingID string) (*bookings.Booking, error) {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var pb pgBooking
+
+	err = tx.QueryRowContext(ctx, getBookingByIDSQL, bookingID).
+		Scan(&pb.ID, &pb.SlotID, &pb.UserID, &pb.Status, &pb.ConferenceLink, &pb.CreatedAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, common.ErrBookingNotFound
+		}
+		return nil, fmt.Errorf("get booking by id: %w", err)
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return pgBookingToDomain(&pb), nil
+}
+
+func (s *Storage) getBookingByIDWithTx(ctx context.Context, tx *sql.Tx, bookingID string) (*bookings.Booking, error) {
 	var pb pgBooking
 
 	err := tx.QueryRowContext(ctx, getBookingByIDSQL, bookingID).
@@ -207,11 +376,42 @@ SET status = $1
 WHERE id = $2
 `
 
-func (s *Storage) UpdateBookingStatus(ctx context.Context, tx *sql.Tx, bookingID, status string) error {
-	if tx == nil {
-		return common.ErrNilTx
+func (s *Storage) UpdateBookingStatus(ctx context.Context, bookingID, status string) error {
+	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	tx, err := s.db.BeginTx(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("failed to begin tx: %w", err)
+	}
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	result, err := tx.ExecContext(ctx, updateBookingStatusSQL, status, bookingID)
+	if err != nil {
+		return fmt.Errorf("update booking status: %w", err)
 	}
 
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return common.ErrBookingNotFound
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit tx: %w", err)
+	}
+	commited = true
+
+	return nil
+}
+
+func (s *Storage) updateBookingStatusWithTx(ctx context.Context, tx *sql.Tx, bookingID, status string) error {
 	result, err := tx.ExecContext(ctx, updateBookingStatusSQL, status, bookingID)
 	if err != nil {
 		return fmt.Errorf("update booking status: %w", err)
@@ -252,3 +452,4 @@ func isUniqueViolation(err error) bool {
 	}
 	return false
 }
+

@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -12,14 +11,11 @@ import (
 
 type CancelBooking struct {
 	bookingStorage bookings.BookingStorage
-
-	db *sql.DB
 }
 
-func NewCancelBooking(bookingStorage bookings.BookingStorage, db *sql.DB) *CancelBooking {
+func NewCancelBooking(bookingStorage bookings.BookingStorage) *CancelBooking {
 	return &CancelBooking{
 		bookingStorage: bookingStorage,
-		db:             db,
 	}
 }
 
@@ -33,22 +29,8 @@ type CancelBookingOutput struct {
 }
 
 func (uc *CancelBooking) Execute(ctx context.Context, input CancelBookingInput) (*CancelBookingOutput, error) {
-	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
-
-	tx, err := uc.db.BeginTx(ctx, opts)
-	if err != nil {
-		return nil, common.ErrBeginTx
-	}
-
-	committed := false
-	defer func() {
-		if !committed {
-			_ = tx.Rollback()
-		}
-	}()
-
 	// get booking
-	booking, err := uc.bookingStorage.GetBookingByID(ctx, tx, input.BookingID)
+	booking, err := uc.bookingStorage.GetBookingByID(ctx, input.BookingID)
 	if err != nil {
 		if errors.Is(err, common.ErrBookingNotFound) {
 			return nil, common.ErrBookingNotFound
@@ -67,16 +49,11 @@ func (uc *CancelBooking) Execute(ctx context.Context, input CancelBookingInput) 
 	}
 
 	// update booking status to cancelled
-	err = uc.bookingStorage.UpdateBookingStatus(ctx, tx, input.BookingID, "cancelled")
+	err = uc.bookingStorage.UpdateBookingStatus(ctx, input.BookingID, "cancelled")
 	if err != nil {
 		return nil, fmt.Errorf("update booking status: %w", err)
 	}
 	booking.Status = "cancelled" // update status in the returned booking object
-
-	if err := tx.Commit(); err != nil {
-		return nil, common.ErrCommitTx
-	}
-	committed = true
 
 	return &CancelBookingOutput{Booking: booking}, nil
 }

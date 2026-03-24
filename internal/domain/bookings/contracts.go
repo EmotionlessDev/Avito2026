@@ -2,7 +2,6 @@ package bookings
 
 import (
 	"context"
-	"database/sql"
 )
 
 type Booking struct {
@@ -15,9 +14,9 @@ type Booking struct {
 }
 
 type BookingStorage interface {
-	CreateBooking(ctx context.Context, tx *sql.Tx, slotID, userID string, conferenceLink *string) (*Booking, error)
-	GetBookingsPaginated(ctx context.Context, tx *sql.Tx, limit, offset int) ([]*Booking, int, error)
-	GetBookingsByUserID(ctx context.Context, tx *sql.Tx, userID string) ([]*Booking, error)
-	GetBookingByID(ctx context.Context, tx *sql.Tx, bookingID string) (*Booking, error)
-	UpdateBookingStatus(ctx context.Context, tx *sql.Tx, bookingID, status string) error
+	CreateBooking(ctx context.Context, slotID, userID string, conferenceLink *string) (*Booking, error)
+	GetBookingsPaginated(ctx context.Context, limit, offset int) ([]*Booking, int, error)
+	GetBookingsByUserID(ctx context.Context, userID string) ([]*Booking, error)
+	GetBookingByID(ctx context.Context, bookingID string) (*Booking, error)
+	UpdateBookingStatus(ctx context.Context, bookingID, status string) error
 }

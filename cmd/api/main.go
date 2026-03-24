@@ -63,7 +63,7 @@ func main() {
 	roomStorage := roomStorage.NewStorage(db)
 	scheduleStorage := scheduleStorage.NewStorage(db)
 	slotStorage := slotStorage.NewStorage(db)
-	bookingStorage := bookingStorage.NewStorage()
+	bookingStorage := bookingStorage.NewStorage(db)
 
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
@@ -75,10 +75,10 @@ func main() {
 
 	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage)
 
-	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage, db)
-	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage, db)
-	getMyBookingsUsecase := bookingUsecase.NewGetMyBookings(bookingStorage, db)
-	cancelBookingUsecase := bookingUsecase.NewCancelBooking(bookingStorage, db)
+	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage)
+	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage)
+	getMyBookingsUsecase := bookingUsecase.NewGetMyBookings(bookingStorage)
+	cancelBookingUsecase := bookingUsecase.NewCancelBooking(bookingStorage)
 
 	// Init handlers
 	infoHandler := infoHttp.NewInfoHandler()
