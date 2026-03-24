@@ -71,6 +71,7 @@ func (uc *CancelBooking) Execute(ctx context.Context, input CancelBookingInput) 
 	if err != nil {
 		return nil, fmt.Errorf("update booking status: %w", err)
 	}
+	booking.Status = "cancelled" // update status in the returned booking object
 
 	if err := tx.Commit(); err != nil {
 		return nil, common.ErrCommitTx

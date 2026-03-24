@@ -100,6 +100,12 @@ func (h *CreateHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		}, nil)
 		return
 	}
+	if _, err := uuid.Parse(req.SlotID); err != nil {
+		helpers.WriteJSON(w, http.StatusBadRequest, helpers.Envelope{
+			"error": "invalid_slot_id",
+		}, nil)
+		return
+	}
 
 	user, err := middleware.UserFromContext(r.Context())
 	if err != nil {
