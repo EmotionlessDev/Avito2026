@@ -16,6 +16,7 @@ import (
 	bookingHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/delivery/http"
 	bookingStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/storage"
 	bookingUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
+	infoHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/info/delivery/http"
 	roomHttp "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http"
 	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
 	roomUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
@@ -79,6 +80,8 @@ func main() {
 	getMyBookingsUsecase := bookingUsecase.NewGetMyBookings(bookingStorage, db)
 
 	// Init handlers
+	infoHandler := infoHttp.NewInfoHandler()
+
 	authHandler := authHttp.NewHandler(authUsecase)
 
 	createRoomHandler := roomHttp.NewCreateHandler(createRoomUsecase)
@@ -95,6 +98,9 @@ func main() {
 	// Init serveMux
 	mux := http.NewServeMux()
 	mux.HandleFunc("/dummyLogin", authHandler.DummyLogin)
+	// info
+	mux.Handle("/_info", http.HandlerFunc(infoHandler.ServeHTTP))
+
 	// rooms
 	mux.Handle("/rooms/create", middleware.Chain(
 		http.HandlerFunc(createRoomHandler.CreateRoom),
@@ -105,6 +111,7 @@ func main() {
 		http.HandlerFunc(getRoomsHandler.GetRooms),
 		middleware.JWTMiddleware(jwtSecret)),
 	)
+
 	// schedules
 	mux.Handle("/rooms/{roomId}/schedule/create", middleware.Chain(
 		http.HandlerFunc(createScheduleHandler.CreateSchedule),
