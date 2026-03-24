@@ -70,7 +70,7 @@ func (uc *GetSlots) Execute(ctx context.Context, input GetSlotsInput) ([]*slots.
 	}
 
 	// check room exists
-	_, err = uc.roomStorage.GetRoomByID(ctx, tx, input.RoomID)
+	_, err = uc.roomStorage.GetRoomByID(ctx, input.RoomID)
 	if err != nil {
 		if err == common.ErrRoomNotFound {
 			return nil, common.ErrRoomNotFound
@@ -136,4 +136,3 @@ func contains(slice []int, item int) bool {
 	}
 	return false
 }
-

@@ -60,7 +60,7 @@ func main() {
 	jwtSecret := cfg.GetJWTSecret()
 
 	// Init storages
-	roomStorage := roomStorage.NewStorage()
+	roomStorage := roomStorage.NewStorage(db)
 	scheduleStorage := scheduleStorage.NewStorage()
 	slotStorage := slotStorage.NewStorage()
 	bookingStorage := bookingStorage.NewStorage()
@@ -68,8 +68,8 @@ func main() {
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
 
-	createRoomUsecase := roomUsecase.NewCreateRoom(roomStorage, db)
-	getRoomsUsecase := roomUsecase.NewGetRooms(roomStorage, db)
+	createRoomUsecase := roomUsecase.NewCreateRoom(roomStorage)
+	getRoomsUsecase := roomUsecase.NewGetRooms(roomStorage)
 
 	createScheduleUsecase := scheduleUsecase.NewCreateSchedule(scheduleStorage, db)
 

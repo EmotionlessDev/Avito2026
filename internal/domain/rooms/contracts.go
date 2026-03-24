@@ -2,7 +2,6 @@ package rooms
 
 import (
 	"context"
-	"database/sql"
 )
 
 type Room struct {
@@ -14,7 +13,7 @@ type Room struct {
 }
 
 type RoomStorage interface {
-	CreateRoom(ctx context.Context, tx *sql.Tx, name, description string, capacity int) (string, error)
-	GetRoomByID(ctx context.Context, tx *sql.Tx, id string) (*Room, error)
-	GetRooms(ctx context.Context, tx *sql.Tx) ([]*Room, error)
+	CreateRoom(ctx context.Context, name, description string, capacity int) (string, error)
+	GetRoomByID(ctx context.Context, id string) (*Room, error)
+	GetRooms(ctx context.Context) ([]*Room, error)
 }
