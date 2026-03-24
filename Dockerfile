@@ -13,5 +13,5 @@ FROM alpine:3.19
 WORKDIR /root/
 COPY --from=builder /app/booking-api .
 
-EXPOSE 4000
+EXPOSE 8080
 CMD ["./booking-api"]

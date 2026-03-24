@@ -34,7 +34,7 @@ func main() {
 	// Init config
 	cfg := config.New(0, "", "")
 
-	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
+	flag.IntVar(&cfg.Port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.DB.DSN, "dsn", os.Getenv("BOOKING_POSTGRES_DSN"), "PostgreSQL DSN")
 	flag.StringVar(&cfg.Auth.JWTSecret, "jwt", os.Getenv("JWT_SECRET"), "JWT secret key")
