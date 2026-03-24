@@ -19,3 +19,12 @@ packages:
           filename: mock_{{.InterfaceName | lower}}.go
           structname: Mock{{.InterfaceName}}
           template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots:
+    interfaces:
+      SlotStorage:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
