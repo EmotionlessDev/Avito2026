@@ -4,32 +4,13 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-const (
-	testBookingID = "550e8400-e29b-41d4-a716-446655440000"
-	testUserID    = "660e8400-e29b-41d4-a716-446655440001"
-	testSlotID    = "770e8400-e29b-41d4-a716-446655440002"
-)
-
-func createTestBooking(status string) *bookings.Booking {
-	return &bookings.Booking{
-		ID:             testBookingID,
-		SlotID:         testSlotID,
-		UserID:         testUserID,
-		Status:         status,
-		ConferenceLink: "https://meet.example.com/room123",
-		CreatedAt:      time.Now().Format(time.RFC3339),
-	}
-}
 
 func TestCancelBooking_Execute_Success(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
