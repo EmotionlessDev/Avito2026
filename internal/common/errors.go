@@ -26,6 +26,7 @@ var (
 	ErrUnauthorized         error = errors.New("unauthorized")
 	ErrInvalidUUID          error = errors.New("invalid UUID format")
 	ErrForbidden            error = errors.New("forbidden")
+	ErrBookingNotFound      error = errors.New("booking not found")
 )
 
 func errorResponse(w http.ResponseWriter, status int, err error, message interface{}) {

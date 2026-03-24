@@ -175,6 +175,60 @@ func (s *Storage) GetBookingsByUserID(
 	return result, nil
 }
 
+const getBookingByIDSQL = `
+SELECT id, slot_id, user_id, status, conference_link, created_at
+FROM bookings
+WHERE id = $1
+`
+
+func (s *Storage) GetBookingByID(ctx context.Context, tx *sql.Tx, bookingID string) (*bookings.Booking, error) {
+	if tx == nil {
+		return nil, common.ErrNilTx
+	}
+
+	var pb pgBooking
+
+	err := tx.QueryRowContext(ctx, getBookingByIDSQL, bookingID).
+		Scan(&pb.ID, &pb.SlotID, &pb.UserID, &pb.Status, &pb.ConferenceLink, &pb.CreatedAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, common.ErrBookingNotFound
+		}
+		return nil, fmt.Errorf("get booking by id: %w", err)
+	}
+
+	return pgBookingToDomain(&pb), nil
+}
+
+const updateBookingStatusSQL = `
+UPDATE bookings
+SET status = $1
+WHERE id = $2
+`
+
+func (s *Storage) UpdateBookingStatus(ctx context.Context, tx *sql.Tx, bookingID, status string) error {
+	if tx == nil {
+		return common.ErrNilTx
+	}
+
+	result, err := tx.ExecContext(ctx, updateBookingStatusSQL, status, bookingID)
+	if err != nil {
+		return fmt.Errorf("update booking status: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return common.ErrBookingNotFound
+	}
+
+	return nil
+}
+
 func pgBookingToDomain(pb *pgBooking) *bookings.Booking {
 	var link string
 	if pb.ConferenceLink.Valid {

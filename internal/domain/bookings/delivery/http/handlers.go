@@ -12,6 +12,7 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
+	"github.com/google/uuid"
 )
 
 type CreateBookingUsecase interface {
@@ -26,6 +27,10 @@ type GetMyBookingsUsecase interface {
 	Execute(ctx context.Context, input usecases.GetMyBookingsInput) (*usecases.GetMyBookingsOutput, error)
 }
 
+type CancelBookingUsecase interface {
+	Execute(ctx context.Context, input usecases.CancelBookingInput) (*usecases.CancelBookingOutput, error)
+}
+
 type CreateHandler struct {
 	createUsecase CreateBookingUsecase
 }
@@ -36,6 +41,10 @@ type GetAllHandler struct {
 
 type GetMyHandler struct {
 	getMyUsecase GetMyBookingsUsecase
+}
+
+type CancelHandler struct {
+	cancelUsecase CancelBookingUsecase
 }
 
 func NewCreateHandler(uc CreateBookingUsecase) *CreateHandler {
@@ -53,6 +62,12 @@ func NewGetAllHandler(uc GetAllBookingsUsecase) *GetAllHandler {
 func NewGetMyHandler(uc GetMyBookingsUsecase) *GetMyHandler {
 	return &GetMyHandler{
 		getMyUsecase: uc,
+	}
+}
+
+func NewCancelHandler(uc CancelBookingUsecase) *CancelHandler {
+	return &CancelHandler{
+		cancelUsecase: uc,
 	}
 }
 
@@ -253,6 +268,77 @@ func (h *GetMyHandler) GetMyBookings(w http.ResponseWriter, r *http.Request) {
 
 	resp := getMyBookingsResponse{
 		Bookings: output.Bookings,
+	}
+
+	helpers.WriteJSONObj(w, http.StatusOK, resp, nil)
+}
+
+type cancelBookingResponse struct {
+	Booking *bookings.Booking `json:"booking"`
+}
+
+func (h *CancelHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		common.MethodNotAllowedResponse(w)
+		return
+	}
+
+	bookingID := r.PathValue("bookingId")
+	// validate uuid
+	// if bookingID == "" {
+	// 	helpers.WriteJSON(w, http.StatusBadRequest, helpers.Envelope{
+	// 		"error": "bookingId_required",
+	// 	}, nil)
+	// 	return
+	// }
+	if _, err := uuid.Parse(bookingID); err != nil {
+		helpers.WriteJSON(w, http.StatusInternalServerError, helpers.Envelope{
+			"error": "invalid_booking_id",
+		}, nil)
+		return
+	}
+
+	user, err := middleware.UserFromContext(r.Context())
+	if err != nil {
+		helpers.WriteJSON(w, http.StatusUnauthorized, helpers.Envelope{
+			"error": "unauthorized",
+		}, nil)
+		return
+	}
+
+	if user.Role != "user" {
+		helpers.WriteJSON(w, http.StatusForbidden, helpers.Envelope{
+			"error": "forbidden",
+		}, nil)
+		return
+	}
+
+	input := usecases.CancelBookingInput{
+		BookingID: bookingID,
+		UserID:    user.UserID,
+	}
+
+	output, err := h.cancelUsecase.Execute(r.Context(), input)
+	switch {
+	case errors.Is(err, common.ErrBookingNotFound):
+		helpers.WriteJSON(w, http.StatusNotFound, helpers.Envelope{
+			"error": "booking_not_found",
+		}, nil)
+	case errors.Is(err, common.ErrForbidden):
+		helpers.WriteJSON(w, http.StatusForbidden, helpers.Envelope{
+			"error": "forbidden",
+		}, nil)
+	default:
+		if err != nil {
+			helpers.WriteJSON(w, http.StatusInternalServerError, helpers.Envelope{
+				"error": "internal_error",
+			}, nil)
+			return
+		}
+	}
+
+	resp := cancelBookingResponse{
+		Booking: output.Booking,
 	}
 
 	helpers.WriteJSONObj(w, http.StatusOK, resp, nil)
