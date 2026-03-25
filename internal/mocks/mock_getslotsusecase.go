@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/usecases"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/dto"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,7 +40,7 @@ func (_m *MockGetSlotsUsecase) EXPECT() *MockGetSlotsUsecase_Expecter {
 }
 
 // Execute provides a mock function for the type MockGetSlotsUsecase
-func (_mock *MockGetSlotsUsecase) Execute(ctx context.Context, input usecases.GetSlotsInput) ([]*slots.Slot, error) {
+func (_mock *MockGetSlotsUsecase) Execute(ctx context.Context, input dto.GetSlotsInput) ([]*slots.Slot, error) {
 	ret := _mock.Called(ctx, input)
 
 	if len(ret) == 0 {
@@ -49,17 +49,17 @@ func (_mock *MockGetSlotsUsecase) Execute(ctx context.Context, input usecases.Ge
 
 	var r0 []*slots.Slot
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, usecases.GetSlotsInput) ([]*slots.Slot, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.GetSlotsInput) ([]*slots.Slot, error)); ok {
 		return returnFunc(ctx, input)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, usecases.GetSlotsInput) []*slots.Slot); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.GetSlotsInput) []*slots.Slot); ok {
 		r0 = returnFunc(ctx, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*slots.Slot)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, usecases.GetSlotsInput) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, dto.GetSlotsInput) error); ok {
 		r1 = returnFunc(ctx, input)
 	} else {
 		r1 = ret.Error(1)
@@ -74,20 +74,20 @@ type MockGetSlotsUsecase_Execute_Call struct {
 
 // Execute is a helper method to define mock.On call
 //   - ctx context.Context
-//   - input usecases.GetSlotsInput
+//   - input dto.GetSlotsInput
 func (_e *MockGetSlotsUsecase_Expecter) Execute(ctx interface{}, input interface{}) *MockGetSlotsUsecase_Execute_Call {
 	return &MockGetSlotsUsecase_Execute_Call{Call: _e.mock.On("Execute", ctx, input)}
 }
 
-func (_c *MockGetSlotsUsecase_Execute_Call) Run(run func(ctx context.Context, input usecases.GetSlotsInput)) *MockGetSlotsUsecase_Execute_Call {
+func (_c *MockGetSlotsUsecase_Execute_Call) Run(run func(ctx context.Context, input dto.GetSlotsInput)) *MockGetSlotsUsecase_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 usecases.GetSlotsInput
+		var arg1 dto.GetSlotsInput
 		if args[1] != nil {
-			arg1 = args[1].(usecases.GetSlotsInput)
+			arg1 = args[1].(dto.GetSlotsInput)
 		}
 		run(
 			arg0,
@@ -102,7 +102,7 @@ func (_c *MockGetSlotsUsecase_Execute_Call) Return(slots1 []*slots.Slot, err err
 	return _c
 }
 
-func (_c *MockGetSlotsUsecase_Execute_Call) RunAndReturn(run func(ctx context.Context, input usecases.GetSlotsInput) ([]*slots.Slot, error)) *MockGetSlotsUsecase_Execute_Call {
+func (_c *MockGetSlotsUsecase_Execute_Call) RunAndReturn(run func(ctx context.Context, input dto.GetSlotsInput) ([]*slots.Slot, error)) *MockGetSlotsUsecase_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -8,114 +8,12 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-// type GetSlots struct {
-// 	scheduleStorage schedules.ScheduleStorage
-// 	slotStorage     slots.SlotStorage
-// 	roomStorage     rooms.RoomStorage
-// }
-//
-// func NewGetSlots(
-// 	scheduleStorage schedules.ScheduleStorage,
-// 	slotStorage slots.SlotStorage,
-// 	roomStorage rooms.RoomStorage,
-// ) *GetSlots {
-// 	return &GetSlots{
-// 		scheduleStorage: scheduleStorage,
-// 		slotStorage:     slotStorage,
-// 		roomStorage:     roomStorage,
-// 	}
-// }
-//
-// type GetSlotsInput struct {
-// 	RoomID string
-// 	Date   string // "YYYY-MM-DD"
-// }
-//
-// func (uc *GetSlots) Execute(ctx context.Context, input GetSlotsInput) ([]*slots.Slot, error) {
-// 	// parse date
-// 	date, err := time.Parse("2006-01-02", input.Date)
-// 	if err != nil {
-// 		return nil, common.ErrInvalidDate
-// 	}
-// 	date = date.UTC()
-//
-// 	// check if date is in the past
-// 	if date.Before(time.Now().UTC().Truncate(24 * time.Hour)) {
-// 		return []*slots.Slot{}, nil
-// 	}
-//
-// 	// check uuid
-// 	if _, err := uuid.Parse(input.RoomID); err != nil {
-// 		return nil, common.ErrInvalidUUID
-// 	}
-//
-// 	// check room exists
-// 	_, err = uc.roomStorage.GetRoomByID(ctx, input.RoomID)
-// 	if err != nil {
-// 		if err == common.ErrRoomNotFound {
-// 			return nil, common.ErrRoomNotFound
-// 		}
-// 		return nil, fmt.Errorf("get room: %w", err)
-// 	}
-//
-// 	// get schedule
-// 	sched, err := uc.scheduleStorage.GetScheduleByRoomID(ctx, input.RoomID)
-// 	if err != nil {
-// 		if err == common.ErrScheduleNotFound {
-// 			return []*slots.Slot{}, nil
-// 		}
-// 		return nil, fmt.Errorf("get schedule: %w", err)
-// 	}
-//
-// 	// check day of week
-// 	weekday := int(date.Weekday())
-// 	if weekday == 0 {
-// 		weekday = 7
-// 	}
-// 	if !contains(sched.DaysOfWeek, weekday) {
-// 		return []*slots.Slot{}, nil
-// 	}
-//
-// 	dayStart := date
-// 	dayEnd := dayStart.Add(24 * time.Hour)
-//
-// 	// get existing slots
-// 	existingSlots, err := uc.slotStorage.GetSlotsByDate(ctx, input.RoomID, dayStart, dayEnd)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("get slots: %w", err)
-// 	}
-//
-// 	// generate slots if none exist
-// 	if len(existingSlots) == 0 {
-// 		existingSlots, err = uc.slotStorage.CreateSlotsForSchedule(ctx, input.RoomID, sched, date)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("generate slots: %w", err)
-// 		}
-// 	}
-//
-// 	// get free slots
-// 	freeSlots, err := uc.slotStorage.GetFreeSlots(ctx, input.RoomID, dayStart, dayEnd)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("get free slots: %w", err)
-// 	}
-//
-// 	return freeSlots, nil
-// }
-//
-// func contains(slice []int, item int) bool {
-// 	for _, s := range slice {
-// 		if s == item {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
 
 const (
 	// Dates
@@ -169,7 +67,7 @@ func TestGetSlots_Execute_Success_ExistingSlots(t *testing.T) {
 			{ID: "free-slot-1", RoomID: testRoomID, StartTime: "2220-06-10T09:00:00Z", EndTime: "2220-06-10T09:30:00Z"},
 		}, nil)
 
-	input := GetSlotsInput{
+	input := dto.GetSlotsInput{
 		RoomID: testRoomID,
 		Date:   testFutureDate,
 	}
@@ -223,7 +121,7 @@ func TestGetSlots_Execute_Success_NoExistingSlots(t *testing.T) {
 			{ID: "free-slot-2", RoomID: testRoomID, StartTime: "2220-06-10T09:30:00Z", EndTime: "2220-06-10T10:00:00Z"},
 		}, nil)
 
-	input := GetSlotsInput{
+	input := dto.GetSlotsInput{
 		RoomID: testRoomID,
 		Date:   testFutureDate,
 	}
@@ -243,7 +141,7 @@ func TestGetSlots_Execute_Error_InvalidDate(t *testing.T) {
 
 	uc := NewGetSlots(scheduleStorageMock, slotStorageMock, roomStorageMock)
 
-	input := GetSlotsInput{
+	input := dto.GetSlotsInput{
 		RoomID: testRoomID,
 		Date:   "invalid-date",
 	}
@@ -261,7 +159,7 @@ func TestGetSlots_Execute_Error_InvalidUUID(t *testing.T) {
 
 	uc := NewGetSlots(scheduleStorageMock, slotStorageMock, roomStorageMock)
 
-	input := GetSlotsInput{
+	input := dto.GetSlotsInput{
 		RoomID: testInvalidUUID,
 		Date:   testFutureDate,
 	}
@@ -296,7 +194,7 @@ func TestGetSlots_Execute_WeekdayNotInSchedule(t *testing.T) {
 			EndTime:    "10:00",
 		}, nil)
 
-	input := GetSlotsInput{
+	input := dto.GetSlotsInput{
 		RoomID: testRoomID,
 		Date:   "2220-06-13",
 	}
@@ -318,7 +216,7 @@ func TestGetSlots_Execute_Error_RoomNotFound(t *testing.T) {
 		GetRoomByID(mock.Anything, testRoomID).
 		Return(nil, common.ErrRoomNotFound)
 
-	input := GetSlotsInput{
+	input := dto.GetSlotsInput{
 		RoomID: testRoomID,
 		Date:   testFutureDate,
 	}

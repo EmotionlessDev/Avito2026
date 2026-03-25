@@ -9,6 +9,7 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/dto"
 	"github.com/google/uuid"
 )
 
@@ -30,12 +31,7 @@ func NewGetSlots(
 	}
 }
 
-type GetSlotsInput struct {
-	RoomID string
-	Date   string // "YYYY-MM-DD"
-}
-
-func (uc *GetSlots) Execute(ctx context.Context, input GetSlotsInput) ([]*slots.Slot, error) {
+func (uc *GetSlots) Execute(ctx context.Context, input dto.GetSlotsInput) ([]*slots.Slot, error) {
 	// parse date
 	date, err := time.Parse("2006-01-02", input.Date)
 	if err != nil {
