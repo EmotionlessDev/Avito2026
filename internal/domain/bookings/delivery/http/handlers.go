@@ -290,16 +290,10 @@ func (h *CancelHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bookingID := r.PathValue("bookingId")
-	// validate uuid
-	// if bookingID == "" {
-	// 	helpers.WriteJSON(w, http.StatusBadRequest, helpers.Envelope{
-	// 		"error": "bookingId_required",
-	// 	}, nil)
-	// 	return
-	// }
+
 	if _, err := uuid.Parse(bookingID); err != nil {
-		helpers.WriteJSON(w, http.StatusInternalServerError, helpers.Envelope{
-			"error": "invalid_booking_id",
+		helpers.WriteJSON(w, http.StatusNotFound, helpers.Envelope{
+			"error": "booking_not_found", // better to return bad request status
 		}, nil)
 		return
 	}
