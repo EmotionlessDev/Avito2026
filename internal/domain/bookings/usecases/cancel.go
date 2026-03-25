@@ -20,11 +20,7 @@ func NewCancelBooking(bookingStorage bookings.BookingStorage) *CancelBooking {
 	}
 }
 
-type CancelBookingOutput struct {
-	Booking *bookings.Booking
-}
-
-func (uc *CancelBooking) Execute(ctx context.Context, input dto.CancelBookingInput) (*CancelBookingOutput, error) {
+func (uc *CancelBooking) Execute(ctx context.Context, input dto.CancelBookingInput) (*dto.CancelBookingOutput, error) {
 	// get booking
 	booking, err := uc.bookingStorage.GetBookingByID(ctx, input.BookingID)
 	if err != nil {
@@ -41,7 +37,7 @@ func (uc *CancelBooking) Execute(ctx context.Context, input dto.CancelBookingInp
 
 	// check if booking is already cancelled
 	if booking.Status == "cancelled" {
-		return &CancelBookingOutput{Booking: booking}, nil
+		return &dto.CancelBookingOutput{Booking: booking}, nil
 	}
 
 	// update booking status to cancelled
@@ -51,5 +47,5 @@ func (uc *CancelBooking) Execute(ctx context.Context, input dto.CancelBookingInp
 	}
 	booking.Status = "cancelled" // update status in the returned booking object
 
-	return &CancelBookingOutput{Booking: booking}, nil
+	return &dto.CancelBookingOutput{Booking: booking}, nil
 }

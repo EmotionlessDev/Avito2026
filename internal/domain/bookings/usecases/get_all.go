@@ -18,18 +18,7 @@ func NewGetAllBookings(bookingStorage bookings.BookingStorage) *GetAllBookings {
 	}
 }
 
-type Pagination struct {
-	Page     int
-	PageSize int
-	Total    int
-}
-
-type GetAllBookingsOutput struct {
-	Bookings   []*bookings.Booking
-	Pagination Pagination
-}
-
-func (uc *GetAllBookings) Execute(ctx context.Context, input dto.GetAllBookingsInput) (*GetAllBookingsOutput, error) {
+func (uc *GetAllBookings) Execute(ctx context.Context, input dto.GetAllBookingsInput) (*dto.GetAllBookingsOutput, error) {
 	if input.Page <= 0 {
 		input.Page = 1
 	}
@@ -50,9 +39,9 @@ func (uc *GetAllBookings) Execute(ctx context.Context, input dto.GetAllBookingsI
 		return nil, fmt.Errorf("get bookings: %w", err)
 	}
 
-	return &GetAllBookingsOutput{
+	return &dto.GetAllBookingsOutput{
 		Bookings: items,
-		Pagination: Pagination{
+		Pagination: dto.Pagination{
 			Page:     input.Page,
 			PageSize: input.PageSize,
 			Total:    total,

@@ -10,7 +10,6 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 	"github.com/google/uuid"
@@ -21,15 +20,15 @@ type CreateBookingUsecase interface {
 }
 
 type GetAllBookingsUsecase interface {
-	Execute(ctx context.Context, input dto.GetAllBookingsInput) (*usecases.GetAllBookingsOutput, error)
+	Execute(ctx context.Context, input dto.GetAllBookingsInput) (*dto.GetAllBookingsOutput, error)
 }
 
 type GetMyBookingsUsecase interface {
-	Execute(ctx context.Context, input dto.GetMyBookingsInput) (*usecases.GetMyBookingsOutput, error)
+	Execute(ctx context.Context, input dto.GetMyBookingsInput) (*dto.GetMyBookingsOutput, error)
 }
 
 type CancelBookingUsecase interface {
-	Execute(ctx context.Context, input dto.CancelBookingInput) (*usecases.CancelBookingOutput, error)
+	Execute(ctx context.Context, input dto.CancelBookingInput) (*dto.CancelBookingOutput, error)
 }
 
 type CreateHandler struct {
@@ -164,7 +163,7 @@ func (h *CreateHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 
 type getAllBookingsResponse struct {
 	Bookings   []*bookings.Booking `json:"bookings"`
-	Pagination usecases.Pagination `json:"pagination"`
+	Pagination dto.Pagination      `json:"pagination"`
 }
 
 func (h *GetAllHandler) GetAllBookings(w http.ResponseWriter, r *http.Request) {

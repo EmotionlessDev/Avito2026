@@ -18,17 +18,13 @@ func NewGetMyBookings(bookingStorage bookings.BookingStorage) *GetMyBookings {
 	}
 }
 
-type GetMyBookingsOutput struct {
-	Bookings []*bookings.Booking
-}
-
-func (uc *GetMyBookings) Execute(ctx context.Context, input dto.GetMyBookingsInput) (*GetMyBookingsOutput, error) {
+func (uc *GetMyBookings) Execute(ctx context.Context, input dto.GetMyBookingsInput) (*dto.GetMyBookingsOutput, error) {
 	bookings, err := uc.bookingStorage.GetBookingsByUserID(ctx, input.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("get bookings by user ID: %w", err)
 	}
 
-	return &GetMyBookingsOutput{
+	return &dto.GetMyBookingsOutput{
 		Bookings: bookings,
 	}, nil
 }
