@@ -46,3 +46,10 @@ packages:
           filename: mock_{{.InterfaceName | lower}}.go
           structname: Mock{{.InterfaceName}}
           template: testify
+      GetRoomsUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
