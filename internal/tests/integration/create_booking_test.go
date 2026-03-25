@@ -11,8 +11,10 @@ import (
 	bookingUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
 	roomUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/usecases"
+	scheduleDto "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/dto"
 	scheduleStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/storage"
 	scheduleUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/usecases"
+	slotDto "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/dto"
 	slotStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/storage"
 	slotUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/tests/fixtures"
@@ -34,7 +36,7 @@ func (s *IntegrationSuite) TestCreateBooking_Success() {
 	require.NoError(s.T(), err)
 
 	createScheduleUC := scheduleUsecase.NewCreateSchedule(scheduleSt)
-	_, err = createScheduleUC.Execute(s.ctx, scheduleUsecase.CreateScheduleInput{
+	_, err = createScheduleUC.Execute(s.ctx, scheduleDto.CreateScheduleInput{
 		RoomID:     roomID,
 		StartTime:  "09:00",
 		EndTime:    "18:00",
@@ -49,7 +51,7 @@ func (s *IntegrationSuite) TestCreateBooking_Success() {
 
 	// get slots (and generate them if not exist)
 	getSlotsUC := slotUsecase.NewGetSlots(scheduleSt, slotSt, roomSt)
-	slots, err := getSlotsUC.Execute(s.ctx, slotUsecase.GetSlotsInput{
+	slots, err := getSlotsUC.Execute(s.ctx, slotDto.GetSlotsInput{
 		RoomID: roomID,
 		Date:   futureDate.Format("2006-01-02"),
 	})
@@ -97,7 +99,7 @@ func (s *IntegrationSuite) TestCreateBooking_SlotAlreadyBooked() {
 	require.NoError(s.T(), err)
 
 	createScheduleUC := scheduleUsecase.NewCreateSchedule(scheduleSt)
-	_, err = createScheduleUC.Execute(s.ctx, scheduleUsecase.CreateScheduleInput{
+	_, err = createScheduleUC.Execute(s.ctx, scheduleDto.CreateScheduleInput{
 		RoomID:     roomID,
 		StartTime:  "09:00",
 		EndTime:    "18:00",
@@ -111,7 +113,7 @@ func (s *IntegrationSuite) TestCreateBooking_SlotAlreadyBooked() {
 	}
 
 	getSlotsUC := slotUsecase.NewGetSlots(scheduleSt, slotSt, roomSt)
-	slots, err := getSlotsUC.Execute(s.ctx, slotUsecase.GetSlotsInput{
+	slots, err := getSlotsUC.Execute(s.ctx, slotDto.GetSlotsInput{
 		RoomID: roomID,
 		Date:   futureDate.Format("2006-01-02"),
 	})

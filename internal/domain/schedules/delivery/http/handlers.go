@@ -7,12 +7,12 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/usecases"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 )
 
 type CreateScheduleUsecase interface {
-	Execute(ctx context.Context, input usecases.CreateScheduleInput) (*schedules.Schedule, error)
+	Execute(ctx context.Context, input dto.CreateScheduleInput) (*schedules.Schedule, error)
 }
 
 type ScheduleHandler struct {
@@ -58,7 +58,7 @@ func (h *ScheduleHandler) CreateSchedule(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	input := usecases.CreateScheduleInput{
+	input := dto.CreateScheduleInput{
 		RoomID:     roomID,
 		StartTime:  req.StartTime,
 		EndTime:    req.EndTime,

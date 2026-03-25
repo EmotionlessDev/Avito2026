@@ -5,6 +5,7 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,7 +25,7 @@ func TestCreateSchedule_Execute_Success(t *testing.T) {
 		DaysOfWeek: []int{1, 3, 5},
 	}, nil)
 
-	input := CreateScheduleInput{
+	input := dto.CreateScheduleInput{
 		RoomID:     "roomId",
 		StartTime:  "09:00",
 		EndTime:    "17:00",
@@ -45,7 +46,7 @@ func TestCreateSchedule_Execute_InvalidDaysOfWeek(t *testing.T) {
 	storageMock := mocks.NewMockScheduleStorage(t)
 	uc := NewCreateSchedule(storageMock)
 
-	input := CreateScheduleInput{
+	input := dto.CreateScheduleInput{
 		RoomID:     "roomId",
 		StartTime:  "09:00",
 		EndTime:    "17:00",
@@ -61,7 +62,7 @@ func TestCreateSchedule_Execute_DuplicateDaysOfWeek(t *testing.T) {
 	storageMock := mocks.NewMockScheduleStorage(t)
 	uc := NewCreateSchedule(storageMock)
 
-	input := CreateScheduleInput{
+	input := dto.CreateScheduleInput{
 		RoomID:     "roomId",
 		StartTime:  "09:00",
 		EndTime:    "17:00",
@@ -77,7 +78,7 @@ func TestCreateSchedule_Execute_InvalidScheduleTime(t *testing.T) {
 	storageMock := mocks.NewMockScheduleStorage(t)
 	uc := NewCreateSchedule(storageMock)
 
-	input := CreateScheduleInput{
+	input := dto.CreateScheduleInput{
 		RoomID:     "roomId",
 		StartTime:  "17:00",
 		EndTime:    "09:00",
@@ -95,7 +96,7 @@ func TestCreateSchedule_Execute_ScheduleAlreadyExists(t *testing.T) {
 
 	storageMock.EXPECT().IsScheduleExistsByRoomID(mock.Anything, "roomId").Return(true, nil)
 
-	input := CreateScheduleInput{
+	input := dto.CreateScheduleInput{
 		RoomID:     "roomId",
 		StartTime:  "09:00",
 		EndTime:    "17:00",
@@ -113,7 +114,7 @@ func TestCreateSchedule_Execute_StorageError(t *testing.T) {
 
 	storageMock.EXPECT().IsScheduleExistsByRoomID(mock.Anything, "roomId").Return(false, assert.AnError)
 
-	input := CreateScheduleInput{
+	input := dto.CreateScheduleInput{
 		RoomID:     "roomId",
 		StartTime:  "09:00",
 		EndTime:    "17:00",

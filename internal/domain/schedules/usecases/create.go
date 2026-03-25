@@ -7,6 +7,7 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/dto"
 )
 
 type CreateSchedule struct {
@@ -19,14 +20,7 @@ func NewCreateSchedule(scheduleStorage schedules.ScheduleStorage) *CreateSchedul
 	}
 }
 
-type CreateScheduleInput struct {
-	RoomID     string
-	StartTime  string // "HH:MM"
-	EndTime    string // "HH:MM"
-	DaysOfWeek []int
-}
-
-func (uc *CreateSchedule) Execute(ctx context.Context, input CreateScheduleInput) (*schedules.Schedule, error) {
+func (uc *CreateSchedule) Execute(ctx context.Context, input dto.CreateScheduleInput) (*schedules.Schedule, error) {
 	// Check days of week
 	seen := make(map[int]bool)
 	for _, d := range input.DaysOfWeek {
