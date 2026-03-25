@@ -1,0 +1,113 @@
+all: false
+
+packages:
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms:
+    interfaces:
+      RoomStorage:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules:
+    interfaces:
+      ScheduleStorage:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/delivery/http:
+    interfaces:
+      CreateScheduleUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots:
+    interfaces:
+      SlotStorage:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/delivery/http:
+    interfaces:
+      GetSlotsUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings:
+    interfaces:
+      BookingStorage:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/delivery/http:
+    interfaces:
+      CancelBookingUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+      CreateBookingUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+      GetAllBookingsUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+      GetMyBookingsUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/delivery/http:
+    interfaces:
+      CreateRoomUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+      GetRoomsUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+  github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/delivery/http:
+    interfaces:
+      DummyLoginUsecase:
+        config:
+          dir: internal/mocks
+          pkgname: mocks
+          filename: mock_{{.InterfaceName | lower}}.go
+          structname: Mock{{.InterfaceName}}
+          template: testify
+

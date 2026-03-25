@@ -2,7 +2,6 @@ package schedules
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
@@ -18,12 +17,11 @@ type Schedule struct {
 type ScheduleStorage interface {
 	CreateSchedule(
 		ctx context.Context,
-		tx *sql.Tx,
 		roomID string,
 		startTime, endTime time.Time,
 		days []int,
 	) (*Schedule, error)
-	GetScheduleByID(ctx context.Context, tx *sql.Tx, scheduleID string) (*Schedule, error)
-	IsScheduleExistsByRoomID(ctx context.Context, tx *sql.Tx, roomID string) (bool, error)
-	GetScheduleByRoomID(ctx context.Context, tx *sql.Tx, roomID string) (*Schedule, error)
+	GetScheduleByID(ctx context.Context, scheduleID string) (*Schedule, error)
+	IsScheduleExistsByRoomID(ctx context.Context, roomID string) (bool, error)
+	GetScheduleByRoomID(ctx context.Context, roomID string) (*Schedule, error)
 }

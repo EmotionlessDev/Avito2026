@@ -60,25 +60,25 @@ func main() {
 	jwtSecret := cfg.GetJWTSecret()
 
 	// Init storages
-	roomStorage := roomStorage.NewStorage()
-	scheduleStorage := scheduleStorage.NewStorage()
-	slotStorage := slotStorage.NewStorage()
-	bookingStorage := bookingStorage.NewStorage()
+	roomStorage := roomStorage.NewStorage(db)
+	scheduleStorage := scheduleStorage.NewStorage(db)
+	slotStorage := slotStorage.NewStorage(db)
+	bookingStorage := bookingStorage.NewStorage(db)
 
 	// Init usecases
 	authUsecase := authDummyLogin.NewDummyLogin(jwtSecret)
 
-	createRoomUsecase := roomUsecase.NewCreateRoom(roomStorage, db)
-	getRoomsUsecase := roomUsecase.NewGetRooms(roomStorage, db)
+	createRoomUsecase := roomUsecase.NewCreateRoom(roomStorage)
+	getRoomsUsecase := roomUsecase.NewGetRooms(roomStorage)
 
-	createScheduleUsecase := scheduleUsecase.NewCreateSchedule(scheduleStorage, db)
+	createScheduleUsecase := scheduleUsecase.NewCreateSchedule(scheduleStorage)
 
-	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage, db)
+	getSlotsUsecase := slotUsecase.NewGetSlots(scheduleStorage, slotStorage, roomStorage)
 
-	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage, db)
-	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage, db)
-	getMyBookingsUsecase := bookingUsecase.NewGetMyBookings(bookingStorage, db)
-	cancelBookingUsecase := bookingUsecase.NewCancelBooking(bookingStorage, db)
+	createBookingUsecase := bookingUsecase.NewCreateBooking(bookingStorage, slotStorage)
+	getAllBookingsUsecase := bookingUsecase.NewGetAllBookings(bookingStorage)
+	getMyBookingsUsecase := bookingUsecase.NewGetMyBookings(bookingStorage)
+	cancelBookingUsecase := bookingUsecase.NewCancelBooking(bookingStorage)
 
 	// Init handlers
 	infoHandler := infoHttp.NewInfoHandler()

@@ -45,6 +45,10 @@ func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 	}
 }
 
+func WithUser(ctx context.Context, claims *Claims) context.Context {
+	return context.WithValue(ctx, userCtxKey, claims)
+}
+
 func UserFromContext(ctx context.Context) (*Claims, error) {
 	claims, ok := ctx.Value(userCtxKey).(*Claims)
 	if !ok {

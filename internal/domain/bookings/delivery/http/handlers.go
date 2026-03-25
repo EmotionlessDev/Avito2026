@@ -9,26 +9,26 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
 	"github.com/google/uuid"
 )
 
 type CreateBookingUsecase interface {
-	Execute(ctx context.Context, input usecases.CreateBookingInput) (*bookings.Booking, error)
+	Execute(ctx context.Context, input dto.CreateBookingInput) (*bookings.Booking, error)
 }
 
 type GetAllBookingsUsecase interface {
-	Execute(ctx context.Context, input usecases.GetAllBookingsInput) (*usecases.GetAllBookingsOutput, error)
+	Execute(ctx context.Context, input dto.GetAllBookingsInput) (*dto.GetAllBookingsOutput, error)
 }
 
 type GetMyBookingsUsecase interface {
-	Execute(ctx context.Context, input usecases.GetMyBookingsInput) (*usecases.GetMyBookingsOutput, error)
+	Execute(ctx context.Context, input dto.GetMyBookingsInput) (*dto.GetMyBookingsOutput, error)
 }
 
 type CancelBookingUsecase interface {
-	Execute(ctx context.Context, input usecases.CancelBookingInput) (*usecases.CancelBookingOutput, error)
+	Execute(ctx context.Context, input dto.CancelBookingInput) (*dto.CancelBookingOutput, error)
 }
 
 type CreateHandler struct {
@@ -122,7 +122,7 @@ func (h *CreateHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecases.CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               req.SlotID,
 		UserID:               user.UserID,
 		CreateConferenceLink: req.CreateConferenceLink,
@@ -163,7 +163,7 @@ func (h *CreateHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 
 type getAllBookingsResponse struct {
 	Bookings   []*bookings.Booking `json:"bookings"`
-	Pagination usecases.Pagination `json:"pagination"`
+	Pagination dto.Pagination      `json:"pagination"`
 }
 
 func (h *GetAllHandler) GetAllBookings(w http.ResponseWriter, r *http.Request) {
@@ -214,7 +214,7 @@ func (h *GetAllHandler) GetAllBookings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	input := usecases.GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     page,
 		PageSize: pageSize,
 	}
@@ -260,7 +260,7 @@ func (h *GetMyHandler) GetMyBookings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecases.GetMyBookingsInput{
+	input := dto.GetMyBookingsInput{
 		UserID: user.UserID,
 	}
 
@@ -279,7 +279,7 @@ func (h *GetMyHandler) GetMyBookings(w http.ResponseWriter, r *http.Request) {
 	helpers.WriteJSONObj(w, http.StatusOK, resp, nil)
 }
 
-type cancelBookingResponse struct {
+type CancelBookingResponse struct {
 	Booking *bookings.Booking `json:"booking"`
 }
 
@@ -290,16 +290,10 @@ func (h *CancelHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bookingID := r.PathValue("bookingId")
-	// validate uuid
-	// if bookingID == "" {
-	// 	helpers.WriteJSON(w, http.StatusBadRequest, helpers.Envelope{
-	// 		"error": "bookingId_required",
-	// 	}, nil)
-	// 	return
-	// }
+
 	if _, err := uuid.Parse(bookingID); err != nil {
-		helpers.WriteJSON(w, http.StatusInternalServerError, helpers.Envelope{
-			"error": "invalid_booking_id",
+		helpers.WriteJSON(w, http.StatusNotFound, helpers.Envelope{
+			"error": "booking_not_found", // better to return bad request status
 		}, nil)
 		return
 	}
@@ -319,7 +313,7 @@ func (h *CancelHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecases.CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: bookingID,
 		UserID:    user.UserID,
 	}
@@ -343,7 +337,7 @@ func (h *CancelHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := cancelBookingResponse{
+	resp := CancelBookingResponse{
 		Booking: output.Booking,
 	}
 

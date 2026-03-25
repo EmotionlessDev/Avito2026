@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/dto"
 	"github.com/google/uuid"
 )
 
@@ -17,29 +17,21 @@ type GetSlots struct {
 	scheduleStorage schedules.ScheduleStorage
 	slotStorage     slots.SlotStorage
 	roomStorage     rooms.RoomStorage
-	db              *sql.DB
 }
 
 func NewGetSlots(
 	scheduleStorage schedules.ScheduleStorage,
 	slotStorage slots.SlotStorage,
 	roomStorage rooms.RoomStorage,
-	db *sql.DB,
 ) *GetSlots {
 	return &GetSlots{
 		scheduleStorage: scheduleStorage,
 		slotStorage:     slotStorage,
 		roomStorage:     roomStorage,
-		db:              db,
 	}
 }
 
-type GetSlotsInput struct {
-	RoomID string
-	Date   string // "YYYY-MM-DD"
-}
-
-func (uc *GetSlots) Execute(ctx context.Context, input GetSlotsInput) ([]*slots.Slot, error) {
+func (uc *GetSlots) Execute(ctx context.Context, input dto.GetSlotsInput) ([]*slots.Slot, error) {
 	// parse date
 	date, err := time.Parse("2006-01-02", input.Date)
 	if err != nil {
@@ -52,25 +44,13 @@ func (uc *GetSlots) Execute(ctx context.Context, input GetSlotsInput) ([]*slots.
 		return []*slots.Slot{}, nil
 	}
 
-	// begin tx
-	tx, err := uc.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return nil, common.ErrBeginTx
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			_ = tx.Rollback()
-		}
-	}()
-
 	// check uuid
 	if _, err := uuid.Parse(input.RoomID); err != nil {
 		return nil, common.ErrInvalidUUID
 	}
 
 	// check room exists
-	_, err = uc.roomStorage.GetRoomByID(ctx, tx, input.RoomID)
+	_, err = uc.roomStorage.GetRoomByID(ctx, input.RoomID)
 	if err != nil {
 		if err == common.ErrRoomNotFound {
 			return nil, common.ErrRoomNotFound
@@ -79,7 +59,7 @@ func (uc *GetSlots) Execute(ctx context.Context, input GetSlotsInput) ([]*slots.
 	}
 
 	// get schedule
-	sched, err := uc.scheduleStorage.GetScheduleByRoomID(ctx, tx, input.RoomID)
+	sched, err := uc.scheduleStorage.GetScheduleByRoomID(ctx, input.RoomID)
 	if err != nil {
 		if err == common.ErrScheduleNotFound {
 			return []*slots.Slot{}, nil
@@ -100,30 +80,24 @@ func (uc *GetSlots) Execute(ctx context.Context, input GetSlotsInput) ([]*slots.
 	dayEnd := dayStart.Add(24 * time.Hour)
 
 	// get existing slots
-	existingSlots, err := uc.slotStorage.GetSlotsByDate(ctx, tx, input.RoomID, dayStart, dayEnd)
+	existingSlots, err := uc.slotStorage.GetSlotsByDate(ctx, input.RoomID, dayStart, dayEnd)
 	if err != nil {
 		return nil, fmt.Errorf("get slots: %w", err)
 	}
 
 	// generate slots if none exist
 	if len(existingSlots) == 0 {
-		existingSlots, err = uc.slotStorage.CreateSlotsForSchedule(ctx, tx, input.RoomID, sched, date)
+		existingSlots, err = uc.slotStorage.CreateSlotsForSchedule(ctx, input.RoomID, sched, date)
 		if err != nil {
 			return nil, fmt.Errorf("generate slots: %w", err)
 		}
 	}
 
 	// get free slots
-	freeSlots, err := uc.slotStorage.GetFreeSlots(ctx, tx, input.RoomID, dayStart, dayEnd)
+	freeSlots, err := uc.slotStorage.GetFreeSlots(ctx, input.RoomID, dayStart, dayEnd)
 	if err != nil {
 		return nil, fmt.Errorf("get free slots: %w", err)
 	}
-
-	// commit
-	if err := tx.Commit(); err != nil {
-		return nil, common.ErrCommitTx
-	}
-	committed = true
 
 	return freeSlots, nil
 }
@@ -136,4 +110,3 @@ func contains(slice []int, item int) bool {
 	}
 	return false
 }
-

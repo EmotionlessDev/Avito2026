@@ -7,12 +7,12 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/usecases"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 )
 
 type GetSlotsUsecase interface {
-	Execute(ctx context.Context, input usecases.GetSlotsInput) ([]*slots.Slot, error)
+	Execute(ctx context.Context, input dto.GetSlotsInput) ([]*slots.Slot, error)
 }
 
 type SlotHandler struct {
@@ -53,7 +53,7 @@ func (h *SlotHandler) GetSlots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecases.GetSlotsInput{
+	input := dto.GetSlotsInput{
 		RoomID: roomID,
 		Date:   date,
 	}

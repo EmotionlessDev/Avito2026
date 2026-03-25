@@ -1,11 +1,12 @@
 package http
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/usecases"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/auth/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 )
 
@@ -13,11 +14,15 @@ type DummyLoginRequest struct {
 	Role string `json:"role"`
 }
 
-type Handler struct {
-	dummyLoginUsecase *usecases.DummyLogin
+type DummyLoginUsecase interface {
+	Execute(ctx context.Context, role string) (dto.TokenResponse, error)
 }
 
-func NewHandler(dummyLogin *usecases.DummyLogin) *Handler {
+type Handler struct {
+	dummyLoginUsecase DummyLoginUsecase
+}
+
+func NewHandler(dummyLogin DummyLoginUsecase) *Handler {
 	return &Handler{
 		dummyLoginUsecase: dummyLogin,
 	}

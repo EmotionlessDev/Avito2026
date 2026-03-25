@@ -2,37 +2,25 @@ package usecases
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/schedules/dto"
 )
 
 type CreateSchedule struct {
 	scheduleStorage schedules.ScheduleStorage
-	slotStorage     slots.SlotStorage
-
-	db *sql.DB
 }
 
-func NewCreateSchedule(scheduleStorage schedules.ScheduleStorage, db *sql.DB) *CreateSchedule {
+func NewCreateSchedule(scheduleStorage schedules.ScheduleStorage) *CreateSchedule {
 	return &CreateSchedule{
 		scheduleStorage: scheduleStorage,
-		db:              db,
 	}
 }
 
-type CreateScheduleInput struct {
-	RoomID     string
-	StartTime  string // "HH:MM"
-	EndTime    string // "HH:MM"
-	DaysOfWeek []int
-}
-
-func (uc *CreateSchedule) Execute(ctx context.Context, input CreateScheduleInput) (*schedules.Schedule, error) {
+func (uc *CreateSchedule) Execute(ctx context.Context, input dto.CreateScheduleInput) (*schedules.Schedule, error) {
 	// Check days of week
 	seen := make(map[int]bool)
 	for _, d := range input.DaysOfWeek {
@@ -58,20 +46,8 @@ func (uc *CreateSchedule) Execute(ctx context.Context, input CreateScheduleInput
 		return nil, common.ErrInvalidScheduleTime
 	}
 
-	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
-	tx, err := uc.db.BeginTx(ctx, opts)
-	if err != nil {
-		return nil, common.ErrBeginTx
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			_ = tx.Rollback()
-		}
-	}()
-
 	// Check if schedule already
-	exists, err := uc.scheduleStorage.IsScheduleExistsByRoomID(ctx, tx, input.RoomID)
+	exists, err := uc.scheduleStorage.IsScheduleExistsByRoomID(ctx, input.RoomID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check existing schedule: %w", err)
 	}
@@ -80,15 +56,10 @@ func (uc *CreateSchedule) Execute(ctx context.Context, input CreateScheduleInput
 	}
 
 	// Create schedule
-	sched, err := uc.scheduleStorage.CreateSchedule(ctx, tx, input.RoomID, start, end, input.DaysOfWeek)
+	sched, err := uc.scheduleStorage.CreateSchedule(ctx, input.RoomID, start, end, input.DaysOfWeek)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create schedule: %w", err)
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, common.ErrCommitTx
-	}
-
-	committed = true
 	return sched, nil
 }
