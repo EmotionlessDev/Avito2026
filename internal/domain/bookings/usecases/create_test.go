@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/mocks"
 )
 
@@ -30,7 +31,7 @@ func TestCreateBooking_Execute_Success_NoConferenceLink(t *testing.T) {
 		CreateBooking(mock.Anything, testSlotID, testUserID, (*string)(nil)).
 		Return(createTestBooking("active"), nil)
 
-	input := CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               testSlotID,
 		UserID:               testUserID,
 		CreateConferenceLink: false,
@@ -63,7 +64,7 @@ func TestCreateBooking_Execute_Success_WithConferenceLink(t *testing.T) {
 		})).
 		Return(createTestBooking("active"), nil)
 
-	input := CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               testSlotID,
 		UserID:               testUserID,
 		CreateConferenceLink: true,
@@ -85,7 +86,7 @@ func TestCreateBooking_Execute_SlotNotFound(t *testing.T) {
 		GetSlotByID(mock.Anything, testSlotID).
 		Return(nil, common.ErrSlotNotFound)
 
-	input := CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               testSlotID,
 		UserID:               testUserID,
 		CreateConferenceLink: false,
@@ -109,7 +110,7 @@ func TestCreateBooking_Execute_SlotInPast(t *testing.T) {
 		GetSlotByID(mock.Anything, testSlotID).
 		Return(testSlot, nil)
 
-	input := CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               testSlotID,
 		UserID:               testUserID,
 		CreateConferenceLink: false,
@@ -137,7 +138,7 @@ func TestCreateBooking_Execute_CreateBookingError(t *testing.T) {
 		CreateBooking(mock.Anything, testSlotID, testUserID, (*string)(nil)).
 		Return(nil, common.ErrSlotAlreadyBooked)
 
-	input := CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               testSlotID,
 		UserID:               testUserID,
 		CreateConferenceLink: false,
@@ -158,7 +159,7 @@ func TestCreateBooking_Execute_GetSlotError(t *testing.T) {
 		GetSlotByID(mock.Anything, testSlotID).
 		Return(nil, errors.New("database connection failed"))
 
-	input := CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               testSlotID,
 		UserID:               testUserID,
 		CreateConferenceLink: false,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/helpers"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/middleware"
@@ -16,19 +17,19 @@ import (
 )
 
 type CreateBookingUsecase interface {
-	Execute(ctx context.Context, input usecases.CreateBookingInput) (*bookings.Booking, error)
+	Execute(ctx context.Context, input dto.CreateBookingInput) (*bookings.Booking, error)
 }
 
 type GetAllBookingsUsecase interface {
-	Execute(ctx context.Context, input usecases.GetAllBookingsInput) (*usecases.GetAllBookingsOutput, error)
+	Execute(ctx context.Context, input dto.GetAllBookingsInput) (*usecases.GetAllBookingsOutput, error)
 }
 
 type GetMyBookingsUsecase interface {
-	Execute(ctx context.Context, input usecases.GetMyBookingsInput) (*usecases.GetMyBookingsOutput, error)
+	Execute(ctx context.Context, input dto.GetMyBookingsInput) (*usecases.GetMyBookingsOutput, error)
 }
 
 type CancelBookingUsecase interface {
-	Execute(ctx context.Context, input usecases.CancelBookingInput) (*usecases.CancelBookingOutput, error)
+	Execute(ctx context.Context, input dto.CancelBookingInput) (*usecases.CancelBookingOutput, error)
 }
 
 type CreateHandler struct {
@@ -122,7 +123,7 @@ func (h *CreateHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecases.CreateBookingInput{
+	input := dto.CreateBookingInput{
 		SlotID:               req.SlotID,
 		UserID:               user.UserID,
 		CreateConferenceLink: req.CreateConferenceLink,
@@ -214,7 +215,7 @@ func (h *GetAllHandler) GetAllBookings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	input := usecases.GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     page,
 		PageSize: pageSize,
 	}
@@ -260,7 +261,7 @@ func (h *GetMyHandler) GetMyBookings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecases.GetMyBookingsInput{
+	input := dto.GetMyBookingsInput{
 		UserID: user.UserID,
 	}
 
@@ -313,7 +314,7 @@ func (h *CancelHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecases.CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: bookingID,
 		UserID:    user.UserID,
 	}

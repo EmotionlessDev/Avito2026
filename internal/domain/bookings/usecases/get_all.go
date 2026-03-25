@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 )
 
 type GetAllBookings struct {
@@ -15,11 +16,6 @@ func NewGetAllBookings(bookingStorage bookings.BookingStorage) *GetAllBookings {
 	return &GetAllBookings{
 		bookingStorage: bookingStorage,
 	}
-}
-
-type GetAllBookingsInput struct {
-	Page     int
-	PageSize int
 }
 
 type Pagination struct {
@@ -33,7 +29,7 @@ type GetAllBookingsOutput struct {
 	Pagination Pagination
 }
 
-func (uc *GetAllBookings) Execute(ctx context.Context, input GetAllBookingsInput) (*GetAllBookingsOutput, error) {
+func (uc *GetAllBookings) Execute(ctx context.Context, input dto.GetAllBookingsInput) (*GetAllBookingsOutput, error) {
 	if input.Page <= 0 {
 		input.Page = 1
 	}

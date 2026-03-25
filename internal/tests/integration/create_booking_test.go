@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
+	bookingDto "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	bookingStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/storage"
 	bookingUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	roomStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/rooms/storage"
@@ -63,7 +64,7 @@ func (s *IntegrationSuite) TestCreateBooking_Success() {
 
 	createBookingUC := bookingUsecase.NewCreateBooking(bookingSt, slotSt)
 
-	input := bookingUsecase.CreateBookingInput{
+	input := bookingDto.CreateBookingInput{
 		SlotID:               slotToBook.ID,
 		UserID:               userID,
 		CreateConferenceLink: true,
@@ -125,7 +126,7 @@ func (s *IntegrationSuite) TestCreateBooking_SlotAlreadyBooked() {
 
 	createBookingUC := bookingUsecase.NewCreateBooking(bookingSt, slotSt)
 
-	input := bookingUsecase.CreateBookingInput{
+	input := bookingDto.CreateBookingInput{
 		SlotID:               slotToBook.ID,
 		UserID:               userID,
 		CreateConferenceLink: true,

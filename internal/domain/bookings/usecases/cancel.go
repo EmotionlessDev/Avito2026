@@ -7,6 +7,7 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 )
 
 type CancelBooking struct {
@@ -19,16 +20,11 @@ func NewCancelBooking(bookingStorage bookings.BookingStorage) *CancelBooking {
 	}
 }
 
-type CancelBookingInput struct {
-	BookingID string
-	UserID    string
-}
-
 type CancelBookingOutput struct {
 	Booking *bookings.Booking
 }
 
-func (uc *CancelBooking) Execute(ctx context.Context, input CancelBookingInput) (*CancelBookingOutput, error) {
+func (uc *CancelBooking) Execute(ctx context.Context, input dto.CancelBookingInput) (*CancelBookingOutput, error) {
 	// get booking
 	booking, err := uc.bookingStorage.GetBookingByID(ctx, input.BookingID)
 	if err != nil {

@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
+	bookingDto "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	bookingStorage "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/storage"
-	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	bookingUsecase "github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/usecases"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/tests/fixtures"
 )
@@ -36,7 +36,7 @@ func (s *IntegrationSuite) TestCancelBooking_Success() {
 	bookingStorage := bookingStorage.NewStorage(s.db)
 	cancelBookingUC := bookingUsecase.NewCancelBooking(bookingStorage)
 
-	input := usecases.CancelBookingInput{
+	input := bookingDto.CancelBookingInput{
 		BookingID: bookingID,
 		UserID:    userID,
 	}
@@ -78,7 +78,7 @@ func (s *IntegrationSuite) TestCancelBooking_AlreadyCancelled() {
 	bookingStorage := bookingStorage.NewStorage(s.db)
 	cancelBookingUC := bookingUsecase.NewCancelBooking(bookingStorage)
 
-	input := usecases.CancelBookingInput{
+	input := bookingDto.CancelBookingInput{
 		BookingID: bookingID,
 		UserID:    userID,
 	}
@@ -122,7 +122,7 @@ func (s *IntegrationSuite) TestCancelBooking_DifferentUser() {
 	bookingStorage := bookingStorage.NewStorage(s.db)
 	cancelBookingUC := bookingUsecase.NewCancelBooking(bookingStorage)
 
-	input := usecases.CancelBookingInput{
+	input := bookingDto.CancelBookingInput{
 		BookingID: bookingID,
 		UserID:    otherUserID,
 	}
@@ -146,7 +146,7 @@ func (s *IntegrationSuite) TestCancelBooking_NonExistentBooking() {
 	bookingStorage := bookingStorage.NewStorage(s.db)
 	cancelBookingUC := bookingUsecase.NewCancelBooking(bookingStorage)
 
-	input := usecases.CancelBookingInput{
+	input := bookingDto.CancelBookingInput{
 		BookingID: uuid.New().String(),
 		UserID:    userID,
 	}

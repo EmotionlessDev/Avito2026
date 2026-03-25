@@ -7,6 +7,7 @@ import (
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/slots"
 )
 
@@ -22,13 +23,7 @@ func NewCreateBooking(bookingStorage bookings.BookingStorage, slotStorage slots.
 	}
 }
 
-type CreateBookingInput struct {
-	SlotID               string
-	UserID               string
-	CreateConferenceLink bool
-}
-
-func (uc *CreateBooking) Execute(ctx context.Context, input CreateBookingInput) (*bookings.Booking, error) {
+func (uc *CreateBooking) Execute(ctx context.Context, input dto.CreateBookingInput) (*bookings.Booking, error) {
 	// get slot
 	slot, err := uc.slotStorage.GetSlotByID(ctx, input.SlotID)
 	if err != nil {

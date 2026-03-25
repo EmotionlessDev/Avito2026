@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/common"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,7 +27,7 @@ func TestCancelBooking_Execute_Success(t *testing.T) {
 		UpdateBookingStatus(mock.Anything, testBookingID, "cancelled").
 		Return(nil)
 
-	input := CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: testBookingID,
 		UserID:    testUserID,
 	}
@@ -49,7 +50,7 @@ func TestCancelBooking_Execute_BookingNotFound(t *testing.T) {
 		GetBookingByID(mock.Anything, testBookingID).
 		Return(nil, common.ErrBookingNotFound)
 
-	input := CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: testBookingID,
 		UserID:    testUserID,
 	}
@@ -71,7 +72,7 @@ func TestCancelBooking_Execute_Forbidden(t *testing.T) {
 		GetBookingByID(mock.Anything, testBookingID).
 		Return(existingBooking, nil)
 
-	input := CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: testBookingID,
 		UserID:    testUserID,
 	}
@@ -92,7 +93,7 @@ func TestCancelBooking_Execute_AlreadyCancelled(t *testing.T) {
 		GetBookingByID(mock.Anything, testBookingID).
 		Return(existingBooking, nil)
 
-	input := CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: testBookingID,
 		UserID:    testUserID,
 	}
@@ -119,7 +120,7 @@ func TestCancelBooking_Execute_UpdateStatusError(t *testing.T) {
 		UpdateBookingStatus(mock.Anything, testBookingID, "cancelled").
 		Return(errors.New("database error"))
 
-	input := CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: testBookingID,
 		UserID:    testUserID,
 	}
@@ -140,7 +141,7 @@ func TestCancelBooking_Execute_GetBookingError(t *testing.T) {
 		GetBookingByID(mock.Anything, testBookingID).
 		Return(nil, errors.New("database connection failed"))
 
-	input := CancelBookingInput{
+	input := dto.CancelBookingInput{
 		BookingID: testBookingID,
 		UserID:    testUserID,
 	}
@@ -222,7 +223,7 @@ func TestCancelBooking_Execute(t *testing.T) {
 				}
 			}
 
-			input := CancelBookingInput{
+			input := dto.CancelBookingInput{
 				BookingID: testBookingID,
 				UserID:    tt.inputUserID,
 			}

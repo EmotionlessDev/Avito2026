@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 )
 
 type GetMyBookings struct {
@@ -17,15 +18,11 @@ func NewGetMyBookings(bookingStorage bookings.BookingStorage) *GetMyBookings {
 	}
 }
 
-type GetMyBookingsInput struct {
-	UserID string
-}
-
 type GetMyBookingsOutput struct {
 	Bookings []*bookings.Booking
 }
 
-func (uc *GetMyBookings) Execute(ctx context.Context, input GetMyBookingsInput) (*GetMyBookingsOutput, error) {
+func (uc *GetMyBookings) Execute(ctx context.Context, input dto.GetMyBookingsInput) (*GetMyBookingsOutput, error) {
 	bookings, err := uc.bookingStorage.GetBookingsByUserID(ctx, input.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("get bookings by user ID: %w", err)

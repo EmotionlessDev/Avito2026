@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/mocks"
 )
 
@@ -23,7 +24,7 @@ func TestGetAllBookings_Execute_Success_Page1(t *testing.T) {
 	}
 	totalCount := 50
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     1,
 		PageSize: 20,
 	}
@@ -51,7 +52,7 @@ func TestGetAllBookings_Execute_Success_Page2(t *testing.T) {
 	}
 	totalCount := 50
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     2,
 		PageSize: 20,
 	}
@@ -73,7 +74,7 @@ func TestGetAllBookings_Execute_Success_EmptyList(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetAllBookings(bookingStorageMock)
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     1,
 		PageSize: 20,
 	}
@@ -94,7 +95,7 @@ func TestGetAllBookings_Execute_StorageError(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetAllBookings(bookingStorageMock)
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     1,
 		PageSize: 20,
 	}
@@ -115,7 +116,7 @@ func TestGetAllBookings_Execute_PageZero_DefaultsToOne(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetAllBookings(bookingStorageMock)
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     0,
 		PageSize: 20,
 	}
@@ -135,7 +136,7 @@ func TestGetAllBookings_Execute_PageNegative_DefaultsToOne(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetAllBookings(bookingStorageMock)
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     -5,
 		PageSize: 20,
 	}
@@ -155,7 +156,7 @@ func TestGetAllBookings_Execute_PageSizeZero_DefaultsToTwenty(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetAllBookings(bookingStorageMock)
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     1,
 		PageSize: 0,
 	}
@@ -175,7 +176,7 @@ func TestGetAllBookings_Execute_PageSizeOver100_CapsTo100(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetAllBookings(bookingStorageMock)
 
-	input := GetAllBookingsInput{
+	input := dto.GetAllBookingsInput{
 		Page:     1,
 		PageSize: 500,
 	}
@@ -214,7 +215,7 @@ func TestGetAllBookings_Execute_OffsetCalculation(t *testing.T) {
 				GetBookingsPaginated(mock.Anything, tt.pageSize, tt.wantOffset).
 				Return([]*bookings.Booking{}, 0, nil)
 
-			input := GetAllBookingsInput{
+			input := dto.GetAllBookingsInput{
 				Page:     tt.page,
 				PageSize: tt.pageSize,
 			}
@@ -230,7 +231,7 @@ func TestGetAllBookings_Execute_OffsetCalculation(t *testing.T) {
 func TestGetAllBookings_Execute(t *testing.T) {
 	tests := []struct {
 		name            string
-		input           GetAllBookingsInput
+		input           dto.GetAllBookingsInput
 		storageBookings []*bookings.Booking
 		storageTotal    int
 		storageErr      error
@@ -241,7 +242,7 @@ func TestGetAllBookings_Execute(t *testing.T) {
 	}{
 		{
 			name:            "success page 1",
-			input:           GetAllBookingsInput{Page: 1, PageSize: 20},
+			input:           dto.GetAllBookingsInput{Page: 1, PageSize: 20},
 			storageBookings: []*bookings.Booking{createTestBooking("active")},
 			storageTotal:    50,
 			storageErr:      nil,
@@ -252,7 +253,7 @@ func TestGetAllBookings_Execute(t *testing.T) {
 		},
 		{
 			name:            "success page 2",
-			input:           GetAllBookingsInput{Page: 2, PageSize: 20},
+			input:           dto.GetAllBookingsInput{Page: 2, PageSize: 20},
 			storageBookings: []*bookings.Booking{createTestBooking("active")},
 			storageTotal:    50,
 			storageErr:      nil,
@@ -263,7 +264,7 @@ func TestGetAllBookings_Execute(t *testing.T) {
 		},
 		{
 			name:            "page 0 defaults to 1",
-			input:           GetAllBookingsInput{Page: 0, PageSize: 20},
+			input:           dto.GetAllBookingsInput{Page: 0, PageSize: 20},
 			storageBookings: []*bookings.Booking{},
 			storageTotal:    0,
 			storageErr:      nil,
@@ -274,7 +275,7 @@ func TestGetAllBookings_Execute(t *testing.T) {
 		},
 		{
 			name:            "page size 0 defaults to 20",
-			input:           GetAllBookingsInput{Page: 1, PageSize: 0},
+			input:           dto.GetAllBookingsInput{Page: 1, PageSize: 0},
 			storageBookings: []*bookings.Booking{},
 			storageTotal:    0,
 			storageErr:      nil,
@@ -285,7 +286,7 @@ func TestGetAllBookings_Execute(t *testing.T) {
 		},
 		{
 			name:            "page size > 100 caps to 100",
-			input:           GetAllBookingsInput{Page: 1, PageSize: 500},
+			input:           dto.GetAllBookingsInput{Page: 1, PageSize: 500},
 			storageBookings: []*bookings.Booking{},
 			storageTotal:    0,
 			storageErr:      nil,
@@ -296,7 +297,7 @@ func TestGetAllBookings_Execute(t *testing.T) {
 		},
 		{
 			name:            "storage error",
-			input:           GetAllBookingsInput{Page: 1, PageSize: 20},
+			input:           dto.GetAllBookingsInput{Page: 1, PageSize: 20},
 			storageBookings: nil,
 			storageTotal:    0,
 			storageErr:      errors.New("db error"),

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings"
+	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/domain/bookings/dto"
 	"github.com/avito-internships/test-backend-1-EmotionlessDev/internal/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,7 +23,7 @@ func TestGetMyBookings_Execute_Success(t *testing.T) {
 		createTestBooking("active"),
 	}
 
-	input := GetMyBookingsInput{
+	input := dto.GetMyBookingsInput{
 		UserID: testUserID,
 	}
 
@@ -41,7 +42,7 @@ func TestGetMyBookings_Execute_Success_EmptyList(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetMyBookings(bookingStorageMock)
 
-	input := GetMyBookingsInput{
+	input := dto.GetMyBookingsInput{
 		UserID: testUserID,
 	}
 
@@ -61,7 +62,7 @@ func TestGetMyBookings_Execute_StorageError(t *testing.T) {
 	bookingStorageMock := mocks.NewMockBookingStorage(t)
 	uc := NewGetMyBookings(bookingStorageMock)
 
-	input := GetMyBookingsInput{
+	input := dto.GetMyBookingsInput{
 		UserID: testUserID,
 	}
 
@@ -108,7 +109,7 @@ func TestGetMyBookings_Execute_MixedStatuses(t *testing.T) {
 		},
 	}
 
-	input := GetMyBookingsInput{
+	input := dto.GetMyBookingsInput{
 		UserID: testUserID,
 	}
 
@@ -132,7 +133,7 @@ func TestGetMyBookings_Execute_CorrectUserID(t *testing.T) {
 
 	customUserID := "custom-user-id-123"
 
-	input := GetMyBookingsInput{
+	input := dto.GetMyBookingsInput{
 		UserID: customUserID,
 	}
 
