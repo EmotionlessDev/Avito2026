@@ -62,6 +62,14 @@ func (s *IntegrationSuite) CreateBooking(fixture fixtures.BookingFixture) string
 	return fixtures.CreateBooking(s.T(), s.db, fixture)
 }
 
+func (s *IntegrationSuite) CreateSchedule(fixture fixtures.ScheduleFixture) string {
+	return fixtures.CreateSchedule(s.T(), s.db, fixture)
+}
+
+func (s *IntegrationSuite) CreateScheduleDays(scheduleID string, days []int) {
+	fixtures.CreateScheduleDays(s.T(), s.db, scheduleID, days)
+}
+
 func (s *IntegrationSuite) GetTestUser(role string) string {
 	return fixtures.GetTestUser(s.T(), s.db, role)
 }
