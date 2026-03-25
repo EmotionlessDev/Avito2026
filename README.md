@@ -1,5 +1,34 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/xR-tWBKa)
 [![Проверочные тесты](https://github.com/avito-internships/test-backend-1-EmotionlessDev/actions/workflows/classroom.yml/badge.svg)](https://github.com/avito-internships/test-backend-1-EmotionlessDev/actions/workflows/classroom.yml)
+## Управление проектом (Makefile)
+
+### Доступные команды
+
+| Команда | Описание |
+|---------|----------|
+| `make up` | Собрать и запустить все сервисы в фоне (`docker compose up --build`) |
+| `make down` | Остановить и удалить контейнеры |
+| `make migrate` | Применить миграции базы данных |
+| `make seed` | Заполнить БД тестовыми данными из `seed.sql` |
+| `make logs` | Просматривать логи приложения в реальном времени |
+| `make help` | Показать справку по доступным командам |
+
+### Быстрый старт
+
+```bash
+# Запустить проект
+make up
+
+# Применить миграции и заполнить БД тестовыми данными
+make migrate
+make seed
+
+# Проверить логи при отладке
+make logs
+
+# Остановить проект
+make down
+```
 ## Генерация слотов
 
 ### Выбранный подход: Lazy generation
