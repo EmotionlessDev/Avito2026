@@ -1,23 +1,28 @@
-include .env
-ENV_FILE = .env.local
+.PHONY: up down seed migrate logs
 
 up:
-	docker compose --env-file $(ENV_FILE) up -d
-
-build:
-	docker compose build
-
-logs:
-	docker compose --env-file $(ENV_FILE) logs -f
+	docker compose up --build
 
 down:
-	docker compose --env-file $(ENV_FILE) down
+	docker compose down
 
-migrate-up:
-	migrate -path=./migrations -database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable" up
+migrate:
+	docker-compose run --rm migrate
 
-migrate-down:
-	migrate -path=./migrations -database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable" down
+seed:
+	@echo "Seeding database..."
+	@docker compose cp ./seed.sql db:/tmp/seed.sql
+	@docker compose exec -T db psql -U postgres -d booking -f /tmp/seed.sql
+	@echo "Seed completed"
 
-lint:
-	golangci-lint run
+logs:
+	docker compose logs -f app
+
+help:
+	@echo "Usage: make [target]"
+	@echo "Targets:"
+	@echo "  up       - Build and start the application"
+	@echo "  down     - Stop and remove the application containers"
+	@echo "  migrate  - Run database migrations"
+	@echo "  seed     - Seed the database with initial data"
+	@echo "  logs     - Follow the application logs"
