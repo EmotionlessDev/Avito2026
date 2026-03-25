@@ -279,7 +279,7 @@ func (h *GetMyHandler) GetMyBookings(w http.ResponseWriter, r *http.Request) {
 	helpers.WriteJSONObj(w, http.StatusOK, resp, nil)
 }
 
-type cancelBookingResponse struct {
+type CancelBookingResponse struct {
 	Booking *bookings.Booking `json:"booking"`
 }
 
@@ -337,7 +337,7 @@ func (h *CancelHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := cancelBookingResponse{
+	resp := CancelBookingResponse{
 		Booking: output.Booking,
 	}
 
